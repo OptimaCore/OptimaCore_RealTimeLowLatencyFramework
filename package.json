@@ -1,0 +1,66 @@
+{
+  "name": "optimacore_realtimelowlatencyframework",
+  "version": "0.1.0",
+  "description": "OptimaCore Real-Time Low Latency Framework - High-performance, scalable infrastructure for low-latency applications",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "build": "npm run clean && tsc",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "prepare": "husky install",
+    "bench": "node benchmarks/run.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OptimaCore/OptimaCore_RealTimeLowLatencyFramework.git"
+  },
+  "keywords": [
+    "low-latency",
+    "real-time",
+    "high-performance",
+    "scalable",
+    "infrastructure"
+  ],
+  "author": "OptimaCore Team",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/OptimaCore/OptimaCore_RealTimeLowLatencyFramework/issues"
+  },
+  "homepage": "https://github.com/OptimaCore/OptimaCore_RealTimeLowLatencyFramework#readme",
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.45.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-jest": "^27.2.3",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "husky": "^8.0.3",
+    "jest": "^29.5.0",
+    "lint-staged": "^16.1.6",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.1.6"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}
