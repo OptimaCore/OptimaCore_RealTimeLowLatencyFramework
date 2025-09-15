@@ -1,0 +1,31 @@
+{
+  "host": "localhost",
+  "port": 6379,
+  "password": "",
+  "db": 0,
+  "keyPrefix": "optima:",
+  "retryStrategy": {
+    "maxRetries": 3,
+    "initialDelay": 100,
+    "maxDelay": 1000,
+    "factor": 2
+  },
+  "cluster": {
+    "enabled": false,
+    "nodes": [
+      { "host": "localhost", "port": 7000 },
+      { "host": "localhost", "port": 7001 },
+      { "host": "localhost", "port": 7002 }
+    ]
+  },
+  "cacheOptions": {
+    "defaultTtl": 3600,
+    "maxKeys": 10000,
+    "checkperiod": 60
+  },
+  "metrics": {
+    "enabled": true,
+    "prefix": "redis.",
+    "collectInterval": 30000
+  }
+}
