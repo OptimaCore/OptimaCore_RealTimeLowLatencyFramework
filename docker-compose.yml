@@ -50,9 +50,9 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://optima:optima123@postgres:5432/optima_db
-      - REDIS_URL=redis://:optima123@redis:6379
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-optima}:${POSTGRES_PASSWORD:-optima123}@postgres:5432/${POSTGRES_DB:-optima_db}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-optima123}@redis:6379
       - PORT=3001
     ports:
       - "3001:3001"
@@ -60,6 +60,12 @@ services:
       - ./services:/app/services
       - ./config:/app/config
       - /app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
     networks:
       - optima-network
     restart: unless-stopped
@@ -71,15 +77,23 @@ services:
       dockerfile: Dockerfile
     container_name: optima-frontend
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      - PORT=3000
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app/frontend
       - /app/frontend/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
     networks:
       - optima-network
     restart: unless-stopped

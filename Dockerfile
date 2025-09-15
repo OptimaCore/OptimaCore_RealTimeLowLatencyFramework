@@ -40,9 +40,9 @@ EXPOSE 3000
 RUN chown -R node:node .
 USER node
 
-# Health check
+# Health check - uses container's networking
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:${PORT:-3000}/api/health || exit 1
 
 # Start the application
 CMD ["dumb-init", "node", "server.js"]
