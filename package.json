@@ -52,6 +52,8 @@
   },
   "homepage": "https://github.com/OptimaCore/OptimaCore_RealTimeLowLatencyFramework#readme",
   "devDependencies": {
+    "@types/socket.io": "^3.0.2",
+    "@types/uuid": "^9.0.0",
     "@types/express": "^4.17.17",
     "@types/supertest": "^6.0.2",
     "supertest": "^6.3.3",
@@ -87,6 +89,11 @@
     ]
   },
   "dependencies": {
+    "@azure/web-pubsub": "^1.1.0",
+    "@azure/web-pubsub-socket.io": "^1.0.0",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2",
+    "uuid": "^9.0.0",
     "express-rate-limit": "^6.9.0",
     "http-proxy-middleware": "^2.0.6",
     "winston": "^3.10.0",
