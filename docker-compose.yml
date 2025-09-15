@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: optima-postgres
+    environment:
+      POSTGRES_USER: optima
+      POSTGRES_PASSWORD: optima123
+      POSTGRES_DB: optima_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U optima -d optima_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - optima-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: optima-redis
+    command: redis-server --requirepass optima123
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - optima-network
+
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: optima-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://optima:optima123@postgres:5432/optima_db
+      - REDIS_URL=redis://:optima123@redis:6379
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./services:/app/services
+      - ./config:/app/config
+      - /app/node_modules
+    networks:
+      - optima-network
+    restart: unless-stopped
+
+  # Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: optima-frontend
+    depends_on:
+      - api
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    networks:
+      - optima-network
+    restart: unless-stopped
+
+  # Adminer - Database Management (optional)
+  adminer:
+    image: adminer:latest
+    container_name: optima-adminer
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - optima-network
+
+  # Redis Commander (optional)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: optima-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379:1:optima123
+    depends_on:
+      - redis
+    ports:
+      - "8081:8081"
+    networks:
+      - optima-network
+
+# Volumes
+volumes:
+  postgres_data:
+  redis_data:
+
+# Networks
+networks:
+  optima-network:
+    driver: bridge

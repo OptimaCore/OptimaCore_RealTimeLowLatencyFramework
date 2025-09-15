@@ -48,6 +48,10 @@ A high-performance, scalable infrastructure framework for building low-latency a
 
 ## 🚀 Getting Started
 
+### Docker Setup
+
+For containerized deployment and local development, refer to the [Docker Setup Guide](docs/docker-setup.md).
+
 ### Prerequisites
 
 - Node.js 18+
