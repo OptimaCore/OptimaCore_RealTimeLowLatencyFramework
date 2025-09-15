@@ -1,0 +1,110 @@
+name: Test Redis Module
+
+on:
+  push:
+    paths:
+      - 'infrastructure/modules/redis/**'
+      - '.github/workflows/test-redis-module.yml'
+  pull_request:
+    paths:
+      - 'infrastructure/modules/redis/**'
+      - '.github/workflows/test-redis-module.yml'
+
+env:
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  TF_VAR_location: eastus
+  TF_VAR_environment: test
+  TF_VAR_project_name: github-actions
+
+jobs:
+  test:
+    name: Test Redis Module
+    runs-on: ubuntu-latest
+    environment: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.3.7
+        terraform_wrapper: false
+    
+    - name: Setup Azure CLI
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Terraform Init
+      working-directory: ./infrastructure/modules/redis/test
+      run: |
+        terraform init -input=false \
+          -backend=false \
+          -no-color
+    
+    - name: Terraform Validate
+      working-directory: ./infrastructure/modules/redis/test
+      run: |
+        terraform validate -no-color
+    
+    - name: Terraform Plan
+      id: plan
+      working-directory: ./infrastructure/modules/redis/test
+      run: |
+        terraform plan \
+          -input=false \
+          -out=tfplan \
+          -no-color
+      continue-on-error: true
+    
+    - name: Terraform Plan Status
+      if: steps.plan.outcome == 'failure'
+      run: exit 1
+    
+    - name: Terraform Apply
+      working-directory: ./infrastructure/modules/redis/test
+      run: |
+        terraform apply -auto-approve -input=false tfplan
+    
+    - name: Verify Redis Instances
+      working-directory: ./infrastructure/modules/redis/test
+      run: |
+        # Install redis-tools for redis-cli
+        sudo apt-get update
+        sudo apt-get install -y redis-tools
+        
+        # Get the resource group name from Terraform output
+        RESOURCE_GROUP=$(terraform output -raw resource_group_name)
+        
+        # Run the verification script
+        pwsh -File ../../../.github/scripts/verify-redis.ps1 -ResourceGroupName $RESOURCE_GROUP
+    
+    - name: Terraform Destroy
+      if: always()
+      working-directory: ./infrastructure/modules/redis/test
+      run: |
+        terraform destroy -auto-approve -input=false
+      continue-on-error: true
+    
+    - name: Upload Terraform Plan Artifact
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-plan
+        path: infrastructure/modules/redis/test/tfplan
+        if-no-files-found: ignore
+    
+    - name: Upload Terraform Logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-logs
+        path: |
+          infrastructure/modules/redis/test/*.log
+          infrastructure/modules/redis/test/*.log.*
+        if-no-files-found: ignore
