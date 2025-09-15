@@ -64,8 +64,12 @@
     ]
   },
   "dependencies": {
+    "@azure/identity": "^4.0.0",
+    "@azure/monitor-query": "^1.2.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
+    "commander": "^11.0.0",
+    "uuid": "^9.0.0",
     "yaml": "^2.8.1"
   }
 }

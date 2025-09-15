@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Telemetry",
+  "description": "Telemetry data schema for performance metrics",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "request_id",
+    "region",
+    "dns_ms",
+    "tls_ms",
+    "ttfb_ms",
+    "total_ms",
+    "storage_source",
+    "cache_hit",
+    "db_type",
+    "cpu",
+    "mem"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the request was made"
+    },
+    "request_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the request"
+    },
+    "region": {
+      "type": "string",
+      "description": "Azure region where the request was processed"
+    },
+    "dns_ms": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Time taken for DNS resolution in milliseconds"
+    },
+    "tls_ms": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Time taken for TLS handshake in milliseconds"
+    },
+    "ttfb_ms": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Time to first byte in milliseconds"
+    },
+    "total_ms": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total request time in milliseconds"
+    },
+    "storage_source": {
+      "type": "string",
+      "enum": ["ssd", "hdd", "premium", "standard", "cold", "archive"],
+      "description": "Type of storage used for the request"
+    },
+    "cache_hit": {
+      "type": "boolean",
+      "description": "Whether the request was served from cache"
+    },
+    "db_type": {
+      "type": "string",
+      "enum": ["cosmosdb", "postgresql", "mysql", "sqlserver", "mongodb", "none"],
+      "description": "Type of database used for the request"
+    },
+    "cpu": {
+      "type": "number",
+      "minimum": 0,
+      "description": "CPU usage percentage during the request"
+    },
+    "mem": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Memory usage in MB during the request"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional metadata about the request"
+    }
+  }
+}
