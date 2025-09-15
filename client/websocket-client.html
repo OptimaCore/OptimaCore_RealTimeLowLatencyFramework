@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptimaCore WebSocket Client</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .message .meta {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        .message .content {
+            word-wrap: break-word;
+        }
+        .message.system {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .message.received {
+            background-color: #e3f2fd;
+            border-left: 3px solid #3498db;
+            padding-left: 10px;
+        }
+        .message.sent {
+            background-color: #e8f5e9;
+            border-left: 3px solid #4caf50;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OptimaCore WebSocket Client</h1>
+        
+        <div id="connectionStatus" class="status disconnected">Disconnected</div>
+        
+        <div class="form-group">
+            <label for="serverUrl">WebSocket Server URL:</label>
+            <input type="text" id="serverUrl" value="ws://localhost:3002" placeholder="ws://localhost:3002">
+        </div>
+        
+        <div class="form-group">
+            <label for="clientId">Client ID:</label>
+            <input type="text" id="clientId" placeholder="Leave empty to generate automatically">
+        </div>
+        
+        <div class="form-group">
+            <button id="connectBtn">Connect</button>
+            <button id="disconnectBtn" disabled>Disconnect</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="roomName">Room Name:</label>
+            <div style="display: flex;">
+                <input type="text" id="roomName" placeholder="Enter room name" style="flex: 1;">
+                <button id="joinRoomBtn" style="margin-left: 10px;">Join Room</button>
+                <button id="leaveRoomBtn" style="margin-left: 5px;" disabled>Leave Room</button>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="message">Message:</label>
+            <div style="display: flex;">
+                <input type="text" id="message" placeholder="Type your message here" style="flex: 1;">
+                <button id="sendBtn" style="margin-left: 10px;">Send</button>
+                <button id="broadcastBtn" style="margin-left: 5px;">Broadcast</button>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Messages:</label>
+            <div id="messages"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const joinRoomBtn = document.getElementById('joinRoomBtn');
+        const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const broadcastBtn = document.getElementById('broadcastBtn');
+        const statusDiv = document.getElementById('connectionStatus');
+        const messagesDiv = document.getElementById('messages');
+        const serverUrlInput = document.getElementById('serverUrl');
+        const clientIdInput = document.getElementById('clientId');
+        const roomNameInput = document.getElementById('roomName');
+        const messageInput = document.getElementById('message');
+        
+        // Socket.IO client
+        let socket;
+        let currentRoom = null;
+        
+        // Generate a random client ID if not provided
+        if (!clientIdInput.value) {
+            clientIdInput.value = 'client-' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Helper function to add a message to the UI
+        function addMessage(content, type = 'system') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'meta';
+            metaDiv.textContent = new Date().toLocaleTimeString();
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(metaDiv);
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        // Connect to WebSocket server
+        function connect() {
+            const serverUrl = serverUrlInput.value.trim();
+            const clientId = clientIdInput.value.trim() || `client-${Date.now()}`;
+            
+            if (!serverUrl) {
+                alert('Please enter a WebSocket server URL');
+                return;
+            }
+            
+            try {
+                // Connect to Socket.IO server
+                socket = io(serverUrl, {
+                    query: { clientId },
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000,
+                    timeout: 20000
+                });
+                
+                // Connection established
+                socket.on('connect', () => {
+                    statusDiv.textContent = `Connected as ${clientId}`;
+                    statusDiv.className = 'status connected';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    joinRoomBtn.disabled = false;
+                    sendBtn.disabled = false;
+                    broadcastBtn.disabled = false;
+                    
+                    addMessage(`Connected to ${serverUrl} as ${clientId}`);
+                });
+                
+                // Connection error
+                socket.on('connect_error', (error) => {
+                    console.error('Connection error:', error);
+                    addMessage(`Connection error: ${error.message}`, 'error');
+                });
+                
+                // Disconnected
+                socket.on('disconnect', (reason) => {
+                    statusDiv.textContent = `Disconnected: ${reason}`;
+                    statusDiv.className = 'status disconnected';
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    joinRoomBtn.disabled = true;
+                    leaveRoomBtn.disabled = true;
+                    sendBtn.disabled = true;
+                    broadcastBtn.disabled = true;
+                    currentRoom = null;
+                    
+                    addMessage(`Disconnected: ${reason}`);
+                });
+                
+                // Message received
+                socket.on('message', (data) => {
+                    addMessage(`${data.from}: ${data.message}`, 'received');
+                });
+                
+                // Room message received
+                socket.on('room-message', (data) => {
+                    addMessage(`[${data.room}] ${data.from}: ${data.message}`, 'received');
+                });
+                
+                // Error handling
+                socket.on('error', (error) => {
+                    console.error('Socket error:', error);
+                    addMessage(`Error: ${error.message}`, 'error');
+                });
+                
+            } catch (error) {
+                console.error('Failed to connect:', error);
+                addMessage(`Failed to connect: ${error.message}`, 'error');
+            }
+        }
+        
+        // Disconnect from WebSocket server
+        function disconnect() {
+            if (socket) {
+                if (currentRoom) {
+                    leaveRoom();
+                }
+                socket.disconnect();
+                socket = null;
+            }
+        }
+        
+        // Join a room
+        function joinRoom() {
+            const roomName = roomNameInput.value.trim();
+            if (!roomName) {
+                alert('Please enter a room name');
+                return;
+            }
+            
+            if (socket && socket.connected) {
+                socket.emit('join', roomName);
+                currentRoom = roomName;
+                joinRoomBtn.disabled = true;
+                leaveRoomBtn.disabled = false;
+                addMessage(`Joined room: ${roomName}`);
+            } else {
+                alert('Not connected to server');
+            }
+        }
+        
+        // Leave the current room
+        function leaveRoom() {
+            if (socket && socket.connected && currentRoom) {
+                socket.emit('leave', currentRoom);
+                addMessage(`Left room: ${currentRoom}`);
+                currentRoom = null;
+                joinRoomBtn.disabled = false;
+                leaveRoomBtn.disabled = true;
+            }
+        }
+        
+        // Send a message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            if (socket && socket.connected) {
+                if (currentRoom) {
+                    // Send to room
+                    socket.emit('room-message', {
+                        room: currentRoom,
+                        message: message
+                    });
+                    addMessage(`[${currentRoom}] You: ${message}`, 'sent');
+                } else {
+                    // Send direct message
+                    socket.emit('message', { message });
+                    addMessage(`You: ${message}`, 'sent');
+                }
+                
+                messageInput.value = '';
+                messageInput.focus();
+            } else {
+                alert('Not connected to server');
+            }
+        }
+        
+        // Broadcast a message to all connected clients
+        function broadcastMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            if (socket && socket.connected) {
+                // In a real app, you would call a server endpoint to broadcast
+                // For this example, we'll just send it as a regular message
+                socket.emit('message', { message, broadcast: true });
+                addMessage(`(Broadcast) You: ${message}`, 'sent');
+                
+                messageInput.value = '';
+                messageInput.focus();
+            } else {
+                alert('Not connected to server');
+            }
+        }
+        
+        // Event listeners
+        connectBtn.addEventListener('click', connect);
+        disconnectBtn.addEventListener('click', disconnect);
+        joinRoomBtn.addEventListener('click', joinRoom);
+        leaveRoomBtn.addEventListener('click', leaveRoom);
+        sendBtn.addEventListener('click', sendMessage);
+        broadcastBtn.addEventListener('click', broadcastMessage);
+        
+        // Handle Enter key in message input
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Handle Enter key in room name input
+        roomNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                if (currentRoom) {
+                    leaveRoom();
+                } else {
+                    joinRoom();
+                }
+            }
+        });
+    </script>
+    
+    <!-- Socket.IO client library -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</body>
+</html>
