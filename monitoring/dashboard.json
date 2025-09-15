@@ -1,0 +1,259 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/dashboardDefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "subscriptionId": {
+      "type": "string"
+    },
+    "resourceGroupName": {
+      "type": "string"
+    },
+    "appInsightsName": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "resourceId": "[resourceId(parameters('subscriptionId'), parameters('resourceGroupName'), 'Microsoft.Insights/components', parameters('appInsightsName'))]"
+  },
+  "resources": [
+    {
+      "properties": {
+        "lenses": {
+          "0": {
+            "order": 0,
+            "parts": [
+              {
+                "position": {
+                  "x": 0,
+                  "y": 0,
+                  "rowSpan": 2,
+                  "colSpan": 6
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "componentId",
+                      "value": "[variables('resourceId')]"
+                    },
+                    {
+                      "name": "timeRange",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/AppInsightsExtension/PartType/QuickPulseButtonPart",
+                  "settings": {}
+                }
+              },
+              {
+                "position": {
+                  "x": 6,
+                  "y": 0,
+                  "rowSpan": 2,
+                  "colSpan": 6
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "componentId",
+                      "value": "[variables('resourceId')]"
+                    },
+                    {
+                      "name": "timeRange",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/AppInsightsExtension/PartType/AvailabilityNavBarPart",
+                  "settings": {}
+                }
+              }
+            ]
+          },
+          "1": {
+            "order": 1,
+            "parts": [
+              {
+                "position": {
+                  "x": 0,
+                  "y": 2,
+                  "rowSpan": 4,
+                  "colSpan": 6
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[variables('resourceId')]"
+                              },
+                              "name": "requests/duration",
+                              "aggregationType": 4,
+                              "namespace": "microsoft.insights/components"
+                            }
+                          ],
+                          "title": "Request Duration (P50/P95/P99)",
+                          "titleKind": 1,
+                          "visualization": {
+                            "chartType": 2,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2
+                            }
+                          }
+                        },
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "resourceType": "microsoft.insights/components"
+                      }
+                    }
+                  ],
+                  "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart"
+                }
+              },
+              {
+                "position": {
+                  "x": 6,
+                  "y": 2,
+                  "rowSpan": 4,
+                  "colSpan": 6
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[variables('resourceId')]"
+                              },
+                              "name": "requests/count",
+                              "aggregationType": 1,
+                              "namespace": "microsoft.insights/components"
+                            }
+                          ],
+                          "title": "Requests per Second",
+                          "titleKind": 1,
+                          "visualization": {
+                            "chartType": 1,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2
+                            }
+                          }
+                        },
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "resourceType": "microsoft.insights/components"
+                      }
+                    }
+                  ],
+                  "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart"
+                }
+              },
+              {
+                "position": {
+                  "x": 0,
+                  "y": 6,
+                  "rowSpan": 4,
+                  "colSpan": 6
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[variables('resourceId')]"
+                              },
+                              "name": "dependencies/count",
+                              "aggregationType": 1,
+                              "namespace": "microsoft.insights/components"
+                            }
+                          ],
+                          "title": "Dependency Calls",
+                          "titleKind": 1,
+                          "visualization": {
+                            "chartType": 1,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2
+                            }
+                          }
+                        },
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "resourceType": "microsoft.insights/components"
+                      }
+                    }
+                  ],
+                  "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart"
+                }
+              },
+              {
+                "position": {
+                  "x": 6,
+                  "y": 6,
+                  "rowSpan": 4,
+                  "colSpan": 6
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[variables('resourceId')]"
+                              },
+                              "name": "exceptions/count",
+                              "aggregationType": 1,
+                              "namespace": "microsoft.insights/components"
+                            }
+                          ],
+                          "title": "Exceptions",
+                          "titleKind": 1,
+                          "visualization": {
+                            "chartType": 1,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2
+                            }
+                          }
+                        },
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "resourceType": "microsoft.insights/components"
+                      }
+                    }
+                  ],
+                  "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "type": "Microsoft.Portal/dashboards",
+      "apiVersion": "2020-09-01-preview",
+      "name": "[concat('OptimaCore-Dashboard-', parameters('appInsightsName'))]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "hidden-title": "[concat('OptimaCore Dashboard - ', parameters('appInsightsName'))]"
+      }
+    }
+  ]
+}
