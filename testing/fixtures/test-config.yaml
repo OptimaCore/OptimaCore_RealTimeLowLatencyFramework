@@ -1,0 +1,50 @@
+environment: test
+
+# Services configuration
+services:
+  # Redis cache service
+  redis:
+    enabled: true
+    variant: test
+    connectionString: redis://test:6379
+
+  # PostgreSQL database service
+  postgres:
+    enabled: true
+    variant: test
+    connectionString: postgresql://test:test@test:5432/test
+
+  # Azure Cosmos DB service
+  cosmos:
+    enabled: false
+    variant: test
+    endpoint: https://test.documents.azure.com:443/
+    key: test-key
+    database: testdb
+
+  # Blob storage service
+  blob:
+    enabled: true
+    variant: test
+    connectionString: DefaultEndpointsProtocol=http;AccountName=test;AccountKey=test;BlobEndpoint=http://test:10000/test;
+    container: test-container
+
+  # Web PubSub service
+  webpubsub:
+    enabled: false
+    variant: test
+    connectionString: Endpoint=https://test.webpubsub.azure.com;AccessKey=test;Version=1.0;
+    hub: test-hub
+
+# Feature flags
+features:
+  enableAnalytics: false
+  enableCaching: true
+  enableLogging: true
+
+# Application settings
+app:
+  port: 3001
+  logLevel: debug
+  environment: test
+  instanceId: test-instance

@@ -1,0 +1,54 @@
+# Example configuration file
+# Copy this file to config.yaml and update the values as needed
+
+# Environment specific settings (development, staging, production)
+environment: development
+
+# Services configuration
+services:
+  # Redis cache service
+  redis:
+    enabled: true
+    variant: default
+    connectionString: ${REDIS_CONNECTION_STRING:-redis://localhost:6379}
+
+  # PostgreSQL database service
+  postgres:
+    enabled: true
+    variant: default
+    connectionString: ${POSTGRES_CONNECTION_STRING:-postgresql://user:password@localhost:5432/mydb}
+
+  # Azure Cosmos DB service
+  cosmos:
+    enabled: false
+    variant: default
+    endpoint: ${COSMOS_ENDPOINT:-https://your-cosmos-account.documents.azure.com:443/}
+    key: ${COSMOS_KEY:-your-primary-key}
+    database: ${COSMOS_DATABASE:-mydb}
+
+  # Blob storage service
+  blob:
+    enabled: false
+    variant: default
+    connectionString: ${BLOB_CONNECTION_STRING:-your-connection-string}
+    container: ${BLOB_CONTAINER:-default}
+
+  # Web PubSub service
+  webpubsub:
+    enabled: false
+    variant: default
+    connectionString: ${WEBPUBSUB_CONNECTION_STRING:-your-connection-string}
+    hub: ${WEBPUBSUB_HUB:-default}
+
+# Feature flags
+features:
+  enableAnalytics: false
+  enableCaching: true
+  enableLogging: true
+
+# Application settings
+app:
+  port: 3000
+  logLevel: info
+  environment: ${NODE_ENV:-development}
+  instanceId: ${HOSTNAME:-local}
