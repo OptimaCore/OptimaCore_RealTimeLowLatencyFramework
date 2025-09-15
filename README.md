@@ -8,6 +8,7 @@ A high-performance, scalable infrastructure framework for building low-latency a
 
 ## 🚀 Features
 
+### Core Infrastructure
 - Ultra-low latency data processing pipeline
 - Horizontally scalable architecture
 - Real-time monitoring and metrics collection
@@ -15,14 +16,31 @@ A high-performance, scalable infrastructure framework for building low-latency a
 - Infrastructure as Code (IaC) with Terraform
 - Comprehensive documentation
 
+### Database Features
+- **PostgreSQL with Read Replicas**: High-availability database with read scaling
+- **Connection Pooling**: Efficient connection management with pg-pool
+- **Automatic Migrations**: Versioned database schema migrations
+- **Query Builder**: Type-safe query construction and execution
+- **Transaction Support**: ACID-compliant transaction management
+- **Connection Retry**: Automatic reconnection with exponential backoff
+- **Performance Metrics**: Built-in query performance tracking
+
 ## 🏗️ Project Structure
 
 ```
 ├── infrastructure/    # Infrastructure as Code (Terraform)
+│   └── modules/       # Reusable infrastructure modules
+│       └── redis/     # Redis cache configuration
 ├── services/          # Core services and business logic
+│   └── database/      # Database access layer
+│       ├── pool.js    # Database connection pooling
+│       ├── query.js   # Query builder and executor
+│       └── migrations/# Database schema migrations
 ├── monitoring/        # Monitoring and observability
 ├── testing/           # Test suites and test utilities
+│   └── database.test.js # Database layer tests
 ├── docs/              # Documentation
+│   └── db-role.md     # Database architecture and patterns
 ├── scripts/           # Utility and build scripts
 ├── frontend/          # Frontend application (if applicable)
 └── experiments/       # Experimental features and benchmarks
@@ -35,6 +53,8 @@ A high-performance, scalable infrastructure framework for building low-latency a
 - Node.js 18+
 - npm 9+
 - Terraform (for infrastructure provisioning)
+- PostgreSQL 14+ (or compatible database)
+- Redis 6+ (for caching)
 
 ### Installation
 
@@ -60,13 +80,30 @@ A high-performance, scalable infrastructure framework for building low-latency a
    ```bash
    npm test
    ```
+   
+   Run database tests specifically:
+   ```bash
+   npm test tests/database.test.js
+   ```
 
-3. Run linter:
+3. Run database migrations:
+   ```bash
+   # Create a new migration
+   node services/database/migrations/migrate.js create migration_name
+   
+   # Apply pending migrations
+   node services/database/migrations/migrate.js up
+   
+   # Rollback last migration
+   node services/database/migrations/migrate.js down
+   ```
+
+4. Run linter:
    ```bash
    npm run lint
    ```
 
-4. Run benchmarks:
+5. Run benchmarks:
    ```bash
    npm run bench
    ```
@@ -75,9 +112,24 @@ A high-performance, scalable infrastructure framework for building low-latency a
 
 Key performance indicators (KPIs) are continuously monitored and optimized:
 
+### Application Level
 - **Latency**: < 10ms p99 for core operations
 - **Throughput**: 100,000+ operations/second
 - **Availability**: 99.99% uptime
+
+### Database Level
+- **Query Performance**: < 5ms p95 for read queries
+- **Connection Pool**: < 80% pool utilization under load
+- **Replication Lag**: < 100ms for read replicas
+- **Cache Hit Ratio**: > 95% for Redis cache
+
+## 📚 Documentation
+
+For detailed documentation on specific components:
+
+- [Database Architecture](docs/db-role.md) - Data authority and denormalization strategy
+- [Database Migrations](services/database/migrations/README.md) - Schema versioning and management
+- [Query Building](services/database/query.js) - How to build and execute queries
 
 ## 📄 License
 
@@ -91,13 +143,21 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 
 ### Phase 1: Foundation (Current)
 - [x] Project setup and tooling
+- [x] Database layer implementation
+  - [x] Connection pooling
+  - [x] Query builder
+  - [x] Migration system
+  - [x] Read replica support
 - [ ] Core infrastructure components
 - [ ] Basic service templates
 
 ### Phase 2: Core Functionality
 - [ ] Data processing pipeline
 - [ ] Real-time communication layer
-- [ ] Basic monitoring setup
+- [ ] Advanced monitoring and metrics
+  - [ ] Query performance tracking
+  - [ ] Connection pool metrics
+  - [ ] Replica lag monitoring
 
 ### Phase 3: Scaling & Optimization
 - [ ] Horizontal scaling
