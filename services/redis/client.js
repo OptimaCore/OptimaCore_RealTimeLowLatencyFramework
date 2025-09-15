@@ -3,9 +3,16 @@ const fs = require('fs');
 const path = require('path');
 const metrics = require('./metrics');
 const { v4: uuidv4 } = require('uuid');
+const { URL } = require('url');
 
 // Default configuration path
 const DEFAULT_CONFIG_PATH = path.join(__dirname, '../../config/redis.json');
+
+// Azure Redis Cache default ports
+const AZURE_REDIS_PORTS = {
+  nonSsl: 6379,
+  ssl: 6380
+};
 
 // Cache strategies
 const CACHE_STRATEGY = {
@@ -42,19 +49,99 @@ class RedisClient {
    * Initialize Redis client based on configuration
    */
   _initClient() {
-    const { cluster, ...redisOptions } = this.config;
+    const { cluster, connection, retry } = this.config;
+    
+    // Prepare common Redis options
+    const redisOptions = {
+      ...connection,
+      retryStrategy: (times) => {
+        if (times > retry.maxRetries) {
+          return null; // Stop retrying after max retries
+        }
+        const delay = Math.min(
+          retry.initialDelay * Math.pow(retry.factor, times - 1) * (1 + Math.random() * retry.jitter),
+          retry.maxDelay
+        );
+        return delay;
+      },
+      reconnectOnError: (err) => {
+        const targetError = 'READONLY';
+        if (err.message.includes(targetError)) {
+          // Only reconnect when the error contains "READONLY" for read-only replicas
+          return true;
+        }
+        return false;
+      },
+      enableOfflineQueue: this.config.cache.enableOfflineQueue,
+      maxRetriesPerRequest: this.config.cache.maxRetriesPerRequest,
+      keyPrefix: connection.keyPrefix,
+      tls: connection.tls.enabled ? {
+        servername: connection.tls.servername,
+        rejectUnauthorized: true,
+        requestCert: true,
+        agent: false
+      } : undefined
+    };
     
     if (cluster.enabled) {
+      // Initialize Redis Cluster client
       this.client = new Redis.Cluster(
         cluster.nodes,
         {
-          scaleReads: 'slave', // Read from replicas when possible
-          enableReadyCheck: true,
-          ...redisOptions
+          ...redisOptions,
+          ...cluster.options,
+          // Azure Redis requires these settings for clustering
+          dnsLookup: (address, callback) => callback(null, address), // Bypass DNS resolution
+          redisOptions: {
+            ...redisOptions,
+            // Override any options that shouldn't be at the cluster level
+            enableOfflineQueue: false,
+            maxRetriesPerRequest: null
+          }
         }
       );
     } else {
+      // Initialize standalone Redis client
       this.client = new Redis(redisOptions);
+    }
+    
+    // Add Azure Redis specific event handlers
+    this._setupAzureEventHandlers();
+  }
+  
+  _setupAzureEventHandlers() {
+    if (!this._isAzureRedis(this.config)) return;
+    
+    // Handle connection errors specifically for Azure
+    this.client.on('error', (error) => {
+      console.error('Azure Redis error:', error.message);
+      
+      // Handle common Azure Redis errors
+      if (error.message.includes('WRONGPASS') || error.message.includes('AUTH')) {
+        console.error('Authentication failed. Please check your access key and username (cache name).');
+      } else if (error.message.includes('ETIMEDOUT') || error.message.includes('ECONNREFUSED')) {
+        console.error('Connection failed. Please check your host and port, and ensure the Azure Cache is running.');
+      } else if (error.message.includes('READONLY')) {
+        console.warn('Read-only replica. Attempting to reconnect to primary...');
+      }
+      
+      metrics.recordError('connection', error);
+    });
+    
+    // Log successful reconnections
+    this.client.on('reconnecting', () => {
+      console.log('Reconnecting to Azure Redis...');
+    });
+    
+    // Handle failover events in cluster mode
+    if (this.config.cluster.enabled) {
+      this.client.on('+node', (node) => {
+        console.log(`New node connected: ${node.options.host}:${node.options.port}`);
+      });
+      
+      this.client.on('-node', (node) => {
+        console.warn(`Node disconnected: ${node.options.host}:${node.options.port}`);
+      });
     }
   }
 
@@ -93,18 +180,103 @@ class RedisClient {
    */
   _loadConfig(configPath = DEFAULT_CONFIG_PATH) {
     try {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      let config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       
       // Apply environment variable overrides
-      if (process.env.REDIS_HOST) config.host = process.env.REDIS_HOST;
-      if (process.env.REDIS_PORT) config.port = parseInt(process.env.REDIS_PORT, 10);
-      if (process.env.REDIS_PASSWORD) config.password = process.env.REDIS_PASSWORD;
-      if (process.env.REDIS_DB) config.db = parseInt(process.env.REDIS_DB, 10);
+      this._applyEnvOverrides(config);
+      
+      // Process connection string if provided (takes precedence over individual settings)
+      if (config.connection.connectionString) {
+        this._processConnectionString(config);
+      }
+      
+      // Set default TLS settings for Azure Redis
+      if (this._isAzureRedis(config)) {
+        this._applyAzureRedisDefaults(config);
+      }
       
       return config;
     } catch (error) {
       console.error('Error loading Redis config:', error);
       throw new Error(`Failed to load Redis configuration: ${error.message}`);
+    }
+  }
+  
+  _applyEnvOverrides(config) {
+    // Connection settings
+    if (process.env.REDIS_HOST) config.connection.host = process.env.REDIS_HOST;
+    if (process.env.REDIS_PORT) config.connection.port = parseInt(process.env.REDIS_PORT, 10);
+    if (process.env.REDIS_USERNAME) config.connection.username = process.env.REDIS_USERNAME;
+    if (process.env.REDIS_PASSWORD) config.connection.password = process.env.REDIS_PASSWORD;
+    if (process.env.REDIS_DB) config.connection.db = parseInt(process.env.REDIS_DB, 10);
+    
+    // Azure settings
+    if (process.env.AZURE_REDIS_CACHE_NAME) config.azure.cacheName = process.env.AZURE_REDIS_CACHE_NAME;
+    if (process.env.AZURE_REDIS_ACCESS_KEY) config.connection.password = process.env.AZURE_REDIS_ACCESS_KEY;
+    
+    // TLS settings
+    if (process.env.REDIS_TLS_ENABLED !== undefined) {
+      config.connection.tls.enabled = process.env.REDIS_TLS_ENABLED === 'true';
+    }
+  }
+  
+  _processConnectionString(config) {
+    try {
+      const connStr = config.connection.connectionString;
+      if (!connStr) return;
+      
+      // Handle Azure Redis connection string format
+      if (connStr.includes('@')) {
+        // Format: redis://username:password@host:port
+        const url = new URL(connStr);
+        config.connection.host = url.hostname;
+        config.connection.port = parseInt(url.port, 10) || 
+          (url.protocol === 'rediss:' ? AZURE_REDIS_PORTS.ssl : AZURE_REDIS_PORTS.nonSsl);
+        config.connection.username = url.username || '';
+        config.connection.password = url.password || '';
+        config.connection.tls.enabled = url.protocol === 'rediss:';
+      } else {
+        // Format: host:port:password
+        const parts = connStr.split(':');
+        if (parts.length >= 2) {
+          config.connection.host = parts[0];
+          config.connection.port = parseInt(parts[1], 10);
+          if (parts[2]) config.connection.password = parts[2];
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse connection string:', error);
+    }
+  }
+  
+  _isAzureRedis(config) {
+    return (
+      config.connection.host.endsWith('.redis.cache.windows.net') ||
+      config.connection.host.endsWith('.redis.cache.chinacloudapi.cn') ||
+      config.connection.host.endsWith('.redis.cache.usgovcloudapi.net') ||
+      config.connection.host.endsWith('.redis.cache.cloudapi.de') ||
+      config.azure.cacheName
+    );
+  }
+  
+  _applyAzureRedisDefaults(config) {
+    // Azure Redis requires TLS by default
+    config.connection.tls.enabled = true;
+    
+    // Set default port if not specified
+    if (!config.connection.port) {
+      config.connection.port = config.connection.tls.enabled ? 
+        AZURE_REDIS_PORTS.ssl : AZURE_REDIS_PORTS.nonSsl;
+    }
+    
+    // Use cache name as username if not specified (Azure requirement)
+    if (!config.connection.username && config.azure.cacheName) {
+      config.connection.username = config.azure.cacheName;
+    }
+    
+    // Set servername for TLS validation
+    if (config.connection.tls.enabled && !config.connection.tls.servername) {
+      config.connection.tls.servername = config.connection.host;
     }
   }
 
@@ -409,15 +581,37 @@ class RedisClient {
    */
   async getStats() {
     try {
-      const [info, dbsize] = await Promise.all([
-        this._executeCommand('info'),
-        this._executeCommand('dbsize')
-      ]);
+      let info, dbsize;
+      
+      // For Azure Redis, we need to handle both cluster and non-cluster modes
+      if (this.config.cluster.enabled && this.client.isCluster) {
+        // Get info from all nodes in the cluster
+        const nodes = this.client.nodes();
+        const nodeInfos = await Promise.all(
+          nodes.map(node => 
+            node.info().catch(err => ({
+              error: err.message,
+              node: `${node.options.host}:${node.options.port}`
+            }))
+          )
+        );
+        
+        // Get the first successful info response
+        info = nodeInfos.find(info => !info.error) || '';
+        dbsize = await this._executeCommand('dbsize');
+      } else {
+        // Standard Redis info command
+        [info, dbsize] = await Promise.all([
+          this._executeCommand('info'),
+          this._executeCommand('dbsize')
+        ]);
+      }
       
       // Parse Redis INFO command output
-      const infoLines = info.split('\r\n');
+      const infoLines = typeof info === 'string' ? info.split('\r\n') : [];
       const stats = {
         version: '',
+        mode: this.config.cluster.enabled ? 'cluster' : 'standalone',
         uptime: 0,
         connected_clients: 0,
         used_memory: 0,
@@ -425,22 +619,76 @@ class RedisClient {
         total_commands_processed: 0,
         keyspace_hits: 0,
         keyspace_misses: 0,
-        dbsize: 0,
-        metrics: metrics.getMetrics()
+        dbsize: dbsize || 0,
+        metrics: metrics.getMetrics(),
+        azure: {
+          cacheName: this.config.azure.cacheName,
+          sku: this.config.azure.skuName,
+          shardCount: this.config.azure.shardCount,
+          tlsVersion: this.config.azure.minimumTlsVersion
+        },
+        isAzure: this._isAzureRedis(this.config)
       };
       
+      // Parse INFO command output
       infoLines.forEach(line => {
-        if (line.startsWith('redis_version:')) stats.version = line.split(':')[1];
-        if (line.startsWith('uptime_in_seconds:')) stats.uptime = parseInt(line.split(':')[1], 10);
-        if (line.startsWith('connected_clients:')) stats.connected_clients = parseInt(line.split(':')[1], 10);
-        if (line.startsWith('used_memory:')) stats.used_memory = parseInt(line.split(':')[1], 10);
-        if (line.startsWith('total_connections_received:')) stats.total_connections_received = parseInt(line.split(':')[1], 10);
-        if (line.startsWith('total_commands_processed:')) stats.total_commands_processed = parseInt(line.split(':')[1], 10);
-        if (line.startsWith('keyspace_hits:')) stats.keyspace_hits = parseInt(line.split(':')[1], 10);
-        if (line.startsWith('keyspace_misses:')) stats.keyspace_misses = parseInt(line.split(':')[1], 10);
+        if (!line || line.startsWith('#')) return;
+        
+        const [key, ...valueParts] = line.split(':');
+        const value = valueParts.join(':').trim();
+        
+        switch (key) {
+          case 'redis_version':
+            stats.version = value;
+            break;
+          case 'uptime_in_seconds':
+            stats.uptime = parseInt(value, 10);
+            break;
+          case 'connected_clients':
+            stats.connected_clients = parseInt(value, 10);
+            break;
+          case 'used_memory':
+            stats.used_memory = parseInt(value, 10);
+            break;
+          case 'total_connections_received':
+            stats.total_connections_received = parseInt(value, 10);
+            break;
+          case 'total_commands_processed':
+            stats.total_commands_processed = parseInt(value, 10);
+            break;
+          case 'keyspace_hits':
+            stats.keyspace_hits = parseInt(value, 10);
+            break;
+          case 'keyspace_misses':
+            stats.keyspace_misses = parseInt(value, 10);
+            break;
+          case 'role':
+            stats.role = value;
+            break;
+          case 'connected_slaves':
+            stats.connected_slaves = parseInt(value, 10);
+            break;
+          case 'used_memory_rss':
+            stats.used_memory_rss = parseInt(value, 10);
+            break;
+          case 'used_memory_peak':
+            stats.used_memory_peak = parseInt(value, 10);
+            break;
+        }
       });
       
-      stats.dbsize = dbsize;
+      // Calculate hit ratio if we have hits and misses
+      if (stats.keyspace_hits > 0 || stats.keyspace_misses > 0) {
+        stats.hit_ratio = (stats.keyspace_hits / (stats.keyspace_hits + stats.keyspace_misses)) * 100;
+      } else {
+        stats.hit_ratio = 0;
+      }
+      
+      // Add Azure-specific metrics if available
+      if (this._isAzureRedis(this.config)) {
+        stats.azure.connected = this.client.status === 'ready';
+        stats.azure.connectionString = this._getMaskedConnectionString();
+      }
       
       return stats;
     } catch (error) {
@@ -454,9 +702,46 @@ class RedisClient {
    * @returns {Promise<void>}
    */
   async close() {
-    if (this.client) {
-      await this.client.quit();
+    if (!this.client) return;
+    
+    try {
+      // For cluster, disconnect all nodes
+      if (this.config.cluster.enabled && this.client.disconnect) {
+        this.client.disconnect();
+      } else if (this.client.quit) {
+        // For standalone, send QUIT command
+        await this.client.quit();
+      }
+    } catch (error) {
+      console.error('Error closing Redis connection:', error);
+      // Force close if graceful shutdown fails
+      if (this.client.disconnect) {
+        this.client.disconnect();
+      }
+    } finally {
       this.connected = false;
+      this.client = null;
+    }
+  }
+  
+  _getMaskedConnectionString() {
+    if (!this.config.connection.connectionString) return '';
+    
+    try {
+      // Mask password in connection string
+      const url = new URL(this.config.connection.connectionString);
+      if (url.password) {
+        url.password = '*****';
+      }
+      return url.toString();
+    } catch (e) {
+      // For non-URL connection strings, just return a masked version
+      const parts = this.config.connection.connectionString.split(':');
+      if (parts.length > 2) {
+        parts[2] = '*****';
+        return parts.join(':');
+      }
+      return '*****';
     }
   }
 

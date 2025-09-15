@@ -1,18 +1,14 @@
 {
   "connection": {
-    "host": "${REDIS_HOST:-localhost}",
-    "port": "${REDIS_PORT:-6380}",
-    "username": "${REDIS_USERNAME:-}",
-    "password": "${REDIS_PASSWORD:-}",
+    "host": "YOUR_CACHE_NAME.redis.cache.windows.net",
+    "port": 6380,
+    "username": "YOUR_CACHE_NAME",
+    "password": "YOUR_ACCESS_KEY",
     "tls": {
       "enabled": true,
-      "servername": "${REDIS_HOST:-localhost}"
+      "servername": "YOUR_CACHE_NAME.redis.cache.windows.net"
     },
-    "connectionString": "${REDIS_CONNECTION_STRING:-}",
-    "db": 0,
-    "keyPrefix": "${REDIS_KEY_PREFIX:-optima:}",
-    "connectionTimeout": 10000,
-    "commandTimeout": 5000
+    "connectionString": "rediss://YOUR_CACHE_NAME:YOUR_ACCESS_KEY@YOUR_CACHE_NAME.redis.cache.windows.net:6380?ssl=true"
   },
   
   "retry": {
@@ -26,9 +22,8 @@
   "cluster": {
     "enabled": false,
     "nodes": [
-      { "host": "${REDIS_NODE_1:-localhost}", "port": "${REDIS_NODE_1_PORT:-6380}" },
-      { "host": "${REDIS_NODE_2:-localhost}", "port": "${REDIS_NODE_2_PORT:-6381}" },
-      { "host": "${REDIS_NODE_3:-localhost}", "port": "${REDIS_NODE_3_PORT:-6382}" }
+      { "host": "YOUR_CACHE_NAME.redis.cache.windows.net", "port": 15000 },
+      { "host": "YOUR_CACHE_NAME.redis.cache.windows.net", "port": 15001 }
     ],
     "options": {
       "scaleReads": "slave",
@@ -50,16 +45,16 @@
   
   "metrics": {
     "enabled": true,
-    "prefix": "redis.",
+    "prefix": "azure.redis.",
     "collectInterval": 30000,
     "azureMonitor": {
-      "enabled": false,
-      "resourceId": ""
+      "enabled": true,
+      "resourceId": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.Cache/redis/YOUR_CACHE_NAME"
     }
   },
   
   "azure": {
-    "cacheName": "",
+    "cacheName": "YOUR_CACHE_NAME",
     "skuName": "Standard_C1",
     "shardCount": 0,
     "enableNonSslPort": false,
