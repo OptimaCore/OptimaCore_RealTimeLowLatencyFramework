@@ -1,0 +1,124 @@
+[
+  {
+    "file": "results\\db-metrics.json",
+    "errors": [
+      {
+        "instancePath": "",
+        "schemaPath": "#/required",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "experiment_id"
+        },
+        "message": "must have required property 'experiment_id'"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/required",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "run_id"
+        },
+        "message": "must have required property 'run_id'"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/required",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "timestamp"
+        },
+        "message": "must have required property 'timestamp'"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/required",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "metrics"
+        },
+        "message": "must have required property 'metrics'"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/required",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "parameters"
+        },
+        "message": "must have required property 'parameters'"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/required",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "storage_source"
+        },
+        "message": "must have required property 'storage_source'"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/required",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "cache_hit"
+        },
+        "message": "must have required property 'cache_hit'"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/additionalProperties",
+        "keyword": "additionalProperties",
+        "params": {
+          "additionalProperty": "$schema"
+        },
+        "message": "must NOT have additional properties"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/additionalProperties",
+        "keyword": "additionalProperties",
+        "params": {
+          "additionalProperty": "title"
+        },
+        "message": "must NOT have additional properties"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/additionalProperties",
+        "keyword": "additionalProperties",
+        "params": {
+          "additionalProperty": "description"
+        },
+        "message": "must NOT have additional properties"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/additionalProperties",
+        "keyword": "additionalProperties",
+        "params": {
+          "additionalProperty": "type"
+        },
+        "message": "must NOT have additional properties"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/additionalProperties",
+        "keyword": "additionalProperties",
+        "params": {
+          "additionalProperty": "properties"
+        },
+        "message": "must NOT have additional properties"
+      },
+      {
+        "instancePath": "",
+        "schemaPath": "#/additionalProperties",
+        "keyword": "additionalProperties",
+        "params": {
+          "additionalProperty": "required"
+        },
+        "message": "must NOT have additional properties"
+      }
+    ]
+  }
+]
