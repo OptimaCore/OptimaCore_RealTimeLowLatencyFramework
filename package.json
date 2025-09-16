@@ -5,6 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
+    "test:db": "node testing/database/db-test.js",
+    "test:load": "node testing/database/load-test.js",
+    "test:load:ci": "node testing/database/load-test.js --clients 200 --iterations 1000 --no-html",
+    "test:monitor": "node monitoring/metrics-collector.js",
     "@azure/storage-blob": "^12.17.0",
     "@azure/web-pubsub-socket.io": "^1.0.0",
     "ajv": "^8.17.1",
@@ -31,7 +35,14 @@
     "winston": "^3.8.2",
     "winston-azure-application-insights": "^3.0.0",
     "winston-daily-rotate-file": "^4.7.1",
-    "yaml": "^2.8.1"
+    "yaml": "^2.8.1",
+    "@opentelemetry/api": "^1.4.1",
+    "@opentelemetry/sdk-metrics": "^1.15.2",
+    "@opentelemetry/exporter-prometheus": "^0.45.0",
+    "@opentelemetry/semantic-conventions": "^1.15.2",
+    "@opentelemetry/sdk-trace-base": "^1.15.2",
+    "@opentelemetry/resources": "^1.15.2",
+    "applicationinsights": "^2.8.2"
   },
   "repository": {
     "type": "git",
