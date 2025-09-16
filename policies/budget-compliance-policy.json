@@ -1,0 +1,133 @@
+{
+  "properties": {
+    "displayName": "Enforce Budget Compliance",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "This policy ensures resources comply with budget constraints by denying creation if it would exceed the defined budget.",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Cost"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "Audit",
+          "Deny",
+          "Disabled"
+        ],
+        "defaultValue": "Deny"
+      },
+      "budgetAmount": {
+        "type": "Integer",
+        "metadata": {
+          "displayName": "Monthly Budget Amount (USD)",
+          "description": "The maximum allowed monthly spend in USD"
+        },
+        "defaultValue": 1000
+      },
+      "excludedResourceGroups": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Excluded Resource Groups",
+          "description": "List of resource groups to exclude from budget enforcement"
+        },
+        "defaultValue": []
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+          },
+          {
+            "not": {
+              "field": "name",
+              "in": "[parameters('excludedResourceGroups')]"
+            }
+          },
+          {
+            "value": "[subscriptionResourceId('Microsoft.Consumption/budgets', 'enforced-budget')]",
+            "exists": "false"
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]",
+        "details": {
+          "type": "Microsoft.Consumption/budgets",
+          "name": "enforced-budget",
+          "existenceCondition": {
+            "field": "Microsoft.Consumption/budgets/amount",
+            "equals": "[parameters('budgetAmount')]"
+          },
+          "roleDefinitionIds": [
+            "/providers/microsoft.authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635" 
+          ],
+          "deployment": {
+            "properties": {
+              "mode": "Incremental",
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {},
+                "variables": {},
+                "resources": [
+                  {
+                    "name": "enforced-budget",
+                    "type": "Microsoft.Consumption/budgets",
+                    "apiVersion": "2019-10-01",
+                    "properties": {
+                      "category": "Cost",
+                      "amount": "[parameters('budgetAmount')]",
+                      "timeGrain": "Monthly",
+                      "timePeriod": {
+                        "startDate": "[utcNow('yyyy-MM-dd')]T00:00:00Z",
+                        "endDate": "[utcDateTimeAdd(utcNow(), 'P1Y')]T00:00:00Z"
+                      },
+                      "notifications": {
+                        "Actual_GreaterThan_90": {
+                          "enabled": true,
+                          "operator": "GreaterThan",
+                          "threshold": 90,
+                          "contactEmails": [
+                            "billing@example.com"
+                          ],
+                          "contactRoles": [
+                            "Owner"
+                          ],
+                          "contactGroups": [],
+                          "thresholdType": "Actual"
+                        },
+                        "Forecasted_GreaterThan_100": {
+                          "enabled": true,
+                          "operator": "GreaterThan",
+                          "threshold": 100,
+                          "contactEmails": [
+                            "billing@example.com"
+                          ],
+                          "contactRoles": [
+                            "Owner"
+                          ],
+                          "contactGroups": [],
+                          "thresholdType": "Forecasted"
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "parameters": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}
