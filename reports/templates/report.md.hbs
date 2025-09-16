@@ -1,0 +1,147 @@
+# {{metadata.experimentId}} - Analysis Report
+
+*Generated on {{formatDate metadata.timestamp}}*  
+*Report ID: {{metadata.reportId}}*
+
+## Executive Summary
+
+This report presents the analysis of the experiment **{{metadata.experimentId}}** conducted across {{metadata.variants.length}} variants. The experiment was designed to {{experimentPurpose}}.
+
+### Key Findings
+
+{{#if hasSignificantResults}}
+- **Significant differences** were found in the following metrics:
+  {{#each significantMetrics}}
+  - `{{this}}` (p < {{lookup ../pValues @index}})
+  {{/each}}
+{{else}}
+- No statistically significant differences were found in the measured metrics.
+{{/if}}
+
+## 1. Introduction
+
+### 1.1 Experiment Overview
+
+| **Property**       | **Value**                |
+|-------------------|--------------------------|
+| Experiment ID    | {{metadata.experimentId}} |
+| Start Time       | {{formatDate metadata.startTime}} |
+| End Time         | {{formatDate metadata.endTime}} |
+| Total Variants   | {{metadata.variants.length}} |
+| Storage Sources  | {{join metadata.storageSources ", "}} |
+| Total Metrics    | {{metadata.metrics.length}} |
+
+### 1.2 Variant Descriptions
+
+{{#each variants}}
+#### {{@key}}
+- **Description**: {{this.description}}
+- **Sample Size**: {{this.sampleSize}} observations
+- **Storage Source**: {{this.storageSource}}
+{{/each}}
+
+## 2. Methodology
+
+### 2.1 Statistical Analysis
+
+We performed the following statistical tests:
+
+- **T-tests**: For comparing means between two variants
+- **ANOVA**: For comparing means across multiple variants
+- **Effect Size**: Cohen's d for t-tests, η² (eta squared) for ANOVA
+- **Significance Level**: α = {{metadata.alpha}}
+
+### 2.2 Data Collection
+
+- **Sampling Method**: {{metadata.samplingMethod}}
+- **Sample Sizes**:
+  {{#each variants}}
+  - {{@key}}: {{this.sampleSize}} samples
+  {{/each}}
+
+## 3. Results
+
+### 3.1 Overall Performance
+
+{{#if hasFigures}}
+![Performance Comparison]({{figurePaths.performance}})
+{{/if}}
+
+### 3.2 Metric-wise Analysis
+
+{{#each metrics}}
+#### {{@key}}
+
+{{#if this.hasSignificantResults}}
+**Significant differences found** (p < {{this.minPValue}})
+
+{{#if this.anova}}
+##### ANOVA Results
+| Source | SS | df | MS | F | p-value | η² |
+|--------|----|----|----|----|---------|----|
+| Between | {{formatNumber this.anova.ss.between 2}} | {{this.anova.df.between}} | {{formatNumber this.anova.ms.between 2}} | {{formatNumber this.anova.fValue 2}} | {{formatPValue this.anova.pValue}} | {{formatNumber this.anova.effectSize.etaSquared 3}} |
+| Within | {{formatNumber this.anova.ss.within 2}} | {{this.anova.df.within}} | {{formatNumber this.anova.ms.within 2}} | | | |
+| Total | {{formatNumber this.anova.ss.total 2}} | {{this.anova.df.total}} | | | | |
+{{/if}}
+
+{{#if this.pairwise}}
+##### Pairwise Comparisons
+| Comparison | Mean Difference | 95% CI | t-value | p-value | Cohen's d |
+|------------|-----------------|--------|---------|---------|-----------|
+{{#each this.pairwise}}
+| {{this.variant1}} vs {{this.variant2}} | {{formatNumber this.meanDiff 2}} | [{{formatNumber this.ci.[0] 2}}, {{formatNumber this.ci.[1] 2}}] | {{formatNumber this.tValue 2}} | {{formatPValue this.pValue}} | {{formatNumber this.effectSize.cohensD 2}} |
+{{/each}}
+{{/if}}
+{{else}}
+No significant differences found between variants.
+{{/if}}
+
+{{/each}}
+
+## 4. Discussion
+
+### 4.1 Key Observations
+
+{{#if hasSignificantResults}}
+- The most significant differences were observed in:
+  {{#each significantMetrics}}
+  - **{{this}}**: {{lookup ../metricInterpretations @index}}
+  {{/each}}
+{{else}}
+- No statistically significant differences were observed in the measured metrics.
+{{/if}}
+
+### 4.2 Limitations
+
+- Sample sizes varied across variants
+- Potential confounding variables: {{metadata.limitations}}
+
+## 5. Conclusion
+
+{{#if hasSignificantResults}}
+The experiment demonstrated statistically significant differences in performance across variants. The most notable findings include:
+
+1. {{conclusionPoint1}}
+2. {{conclusionPoint2}}
+{{else}}
+The experiment did not demonstrate statistically significant differences in the measured metrics across variants. This suggests that the tested variations did not have a meaningful impact on the observed outcomes.
+{{/if}}
+
+## Appendices
+
+### A. Raw Data Summary
+
+```json
+{{toJSON metadata}}
+```
+
+### B. Statistical Details
+
+Detailed statistical results are available in the accompanying files:
+
+- `statistical-results.json`: Complete statistical analysis
+- `figures/`: Generated visualizations
+
+### C. Additional Notes
+
+{{metadata.notes}}

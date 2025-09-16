@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Report</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
+  <style>
+    .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; padding: 45px; }
+    @media (max-width: 767px) {
+      .markdown-body { padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <article class="markdown-body"><h1 id="perf-optimization-2023---analysis-report" tabindex="-1">perf-optimization-2023 - Analysis Report</h1>
+<p><em>Generated on Sep 17, 2025, 01:49 AM</em><br>
+<em>Report ID: c05a0a0c-a309-4530-a517-037357d2924e</em></p>
+<h2 id="executive-summary" tabindex="-1">Executive Summary</h2>
+<p>This report presents the analysis of the experiment <strong>perf-optimization-2023</strong> conducted across 2 variants. The experiment was designed to Compare performance between control and optimized variants.</p>
+<h3 id="key-findings" tabindex="-1">Key Findings</h3>
+<ul>
+<li><strong>Significant differences</strong> were found in the following metrics:
+<ul>
+<li><code>response_time_ms</code> (p &lt; 0.0007)</li>
+<li><code>throughput_rps</code> (p &lt; 0.0002)</li>
+</ul>
+</li>
+</ul>
+<h2 id="1.-introduction" tabindex="-1">1. Introduction</h2>
+<h3 id="1.1-experiment-overview" tabindex="-1">1.1 Experiment Overview</h3>
+<table>
+<thead>
+<tr>
+<th><strong>Property</strong></th>
+<th><strong>Value</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Experiment ID</td>
+<td>perf-optimization-2023</td>
+</tr>
+<tr>
+<td>Start Time</td>
+<td>Nov 15, 2023, 02:30 PM</td>
+</tr>
+<tr>
+<td>End Time</td>
+<td>Nov 15, 2023, 06:00 PM</td>
+</tr>
+<tr>
+<td>Total Variants</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Storage Sources</td>
+<td>redis, postgres</td>
+</tr>
+<tr>
+<td>Total Metrics</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<h3 id="1.2-variant-descriptions" tabindex="-1">1.2 Variant Descriptions</h3>
+<h2 id="2.-methodology" tabindex="-1">2. Methodology</h2>
+<h3 id="2.1-statistical-analysis" tabindex="-1">2.1 Statistical Analysis</h3>
+<p>We performed the following statistical tests:</p>
+<ul>
+<li><strong>T-tests</strong>: For comparing means between two variants</li>
+<li><strong>ANOVA</strong>: For comparing means across multiple variants</li>
+<li><strong>Effect Size</strong>: Cohen's d for t-tests, η² (eta squared) for ANOVA</li>
+<li><strong>Significance Level</strong>: α = 0.05</li>
+</ul>
+<h3 id="2.2-data-collection" tabindex="-1">2.2 Data Collection</h3>
+<ul>
+<li><strong>Sampling Method</strong>: stratified random sampling</li>
+<li><strong>Sample Sizes</strong>:</li>
+</ul>
+<h2 id="3.-results" tabindex="-1">3. Results</h2>
+<h3 id="3.1-overall-performance" tabindex="-1">3.1 Overall Performance</h3>
+<h3 id="3.2-metric-wise-analysis" tabindex="-1">3.2 Metric-wise Analysis</h3>
+<h2 id="4.-discussion" tabindex="-1">4. Discussion</h2>
+<h3 id="4.1-key-observations" tabindex="-1">4.1 Key Observations</h3>
+<ul>
+<li>The most significant differences were observed in:
+<ul>
+<li><strong>response_time_ms</strong>: Significant differences in redis (p = 7.00e-4); control_vs_optimized: control has higher values than optimized (mean diff = 19.40, p = 7.00e-4); Significant differences in postgres (p = 4.10e-3); control_vs_optimized: control has higher values than optimized (mean diff = 13.40, p = 4.10e-3)</li>
+<li><strong>throughput_rps</strong>: Significant differences in redis (p = 2.00e-4); control_vs_optimized: control has lower values than optimized (mean diff = -130.00, p = 2.00e-4)</li>
+</ul>
+</li>
+</ul>
+<h3 id="4.2-limitations" tabindex="-1">4.2 Limitations</h3>
+<ul>
+<li>Sample sizes varied across variants</li>
+<li>Potential confounding variables:</li>
+</ul>
+<h2 id="5.-conclusion" tabindex="-1">5. Conclusion</h2>
+<p>The experiment demonstrated statistically significant differences in performance across variants. The most notable findings include:</p>
+<ol>
+<li>The variant 'unknown' showed the best overall performance.</li>
+<li>The most significant improvement was observed in 'response_time_ms'.</li>
+</ol>
+<h2 id="appendices" tabindex="-1">Appendices</h2>
+<h3 id="a.-raw-data-summary" tabindex="-1">A. Raw Data Summary</h3>
+<pre><code class="language-json">{
+  &amp;quot;experimentId&amp;quot;: &amp;quot;perf-optimization-2023&amp;quot;,
+  &amp;quot;startTime&amp;quot;: &amp;quot;2023-11-15T09:00:00Z&amp;quot;,
+  &amp;quot;endTime&amp;quot;: &amp;quot;2023-11-15T12:30:00Z&amp;quot;,
+  &amp;quot;variants&amp;quot;: [
+    &amp;quot;control&amp;quot;,
+    &amp;quot;optimized&amp;quot;
+  ],
+  &amp;quot;storageSources&amp;quot;: [
+    &amp;quot;redis&amp;quot;,
+    &amp;quot;postgres&amp;quot;
+  ],
+  &amp;quot;metrics&amp;quot;: [
+    &amp;quot;response_time_ms&amp;quot;,
+    &amp;quot;throughput_rps&amp;quot;,
+    &amp;quot;error_rate&amp;quot;
+  ],
+  &amp;quot;samplingMethod&amp;quot;: &amp;quot;stratified random sampling&amp;quot;,
+  &amp;quot;alpha&amp;quot;: 0.05,
+  &amp;quot;notes&amp;quot;: &amp;quot;This is a sample dataset for testing report generation.&amp;quot;,
+  &amp;quot;reportId&amp;quot;: &amp;quot;c05a0a0c-a309-4530-a517-037357d2924e&amp;quot;,
+  &amp;quot;timestamp&amp;quot;: &amp;quot;2025-09-16T20:19:18.668Z&amp;quot;
+}
+</code></pre>
+<h3 id="b.-statistical-details" tabindex="-1">B. Statistical Details</h3>
+<p>Detailed statistical results are available in the accompanying files:</p>
+<ul>
+<li><code>statistical-results.json</code>: Complete statistical analysis</li>
+<li><code>figures/</code>: Generated visualizations</li>
+</ul>
+<h3 id="c.-additional-notes" tabindex="-1">C. Additional Notes</h3>
+<p>This is a sample dataset for testing report generation.</p>
+</article>
+</body>
+</html>

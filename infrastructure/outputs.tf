@@ -46,3 +46,15 @@ output "budget_id" {
   description = "The ID of the budget"
   value       = module.budget.budget_id
 }
+
+# Web App Outputs
+output "webapp_url" {
+  description = "The URL of the web application"
+  value       = var.enable_app_service ? "https://${module.app_service[0].default_site_hostname}" : null
+}
+
+# API Outputs
+output "api_url" {
+  description = "The URL of the API"
+  value       = var.enable_function_app ? module.function_app[0].default_hostname : null
+}
