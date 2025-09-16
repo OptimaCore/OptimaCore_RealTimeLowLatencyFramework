@@ -83,12 +83,15 @@ async function runLoadTest() {
     };
 
     if (options.tool === 'artillery') {
-      command = `${CONFIG.tools.artillery.cmd} run \
-        --environment ${options.env} \
-        --output ${outputFile} \
-        --duration ${options.duration} \
-        --vus ${options.users} \
-        testing/load-test/artillery.yml`;
+      const args = [
+        'run',
+        '--environment', options.env,
+        '--output', `"${outputFile}"`,
+        '--duration', options.duration.toString(),
+        '--vus', options.users.toString(),
+        'testing/load-test/artillery.yml'
+      ];
+      command = `${CONFIG.tools.artillery.cmd} ${args.join(' ')}`;
     } else if (options.tool === 'k6') {
       command = `${CONFIG.tools.k6.cmd} \
         --out json=${outputFile} \
