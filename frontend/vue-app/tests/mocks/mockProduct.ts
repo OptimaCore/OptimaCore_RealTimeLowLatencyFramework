@@ -1,0 +1,28 @@
+export const mockProduct = {
+  id: '1',
+  name: 'Premium Wireless Headphones',
+  description: 'Experience crystal clear sound with our premium wireless headphones. Featuring noise cancellation, 30-hour battery life, and comfortable over-ear design.',
+  price: 249.99,
+  rating: 4.5,
+  reviewCount: 128,
+  image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+  category: 'Audio',
+  inStock: true,
+  colors: ['Black', 'Silver', 'Blue'],
+  sizes: ['S', 'M', 'L'],
+  details: {
+    brand: 'AudioPro',
+    model: 'X500',
+    weight: '0.5kg',
+    dimensions: '20 x 18 x 8 cm',
+    connectivity: 'Bluetooth 5.0',
+    batteryLife: '30 hours',
+    features: [
+      'Active Noise Cancellation',
+      'Built-in Microphone',
+      'Touch Controls',
+      'Foldable Design',
+      'Fast Charging'
+    ]
+  }
+};

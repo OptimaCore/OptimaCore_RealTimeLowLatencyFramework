@@ -8,8 +8,17 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "run-p type-check \"build-only {@}\" --",
+    "preview": "vite preview --port 4173",
+    "test:unit": "vitest",
+    "test:unit:coverage": "vitest run --coverage",
+    "test:e2e": "start-server-and-test preview http://localhost:4173/ 'cypress open --e2e'",
+    "test:e2e:ci": "start-server-and-test preview http://localhost:4173/ 'cypress run --e2e'",
+    "test:integration": "node testing/integration/test-integration.js",
+    "test:all": "npm run test:unit && npm run test:e2e && npm run test:integration",
+    "start:mock": "node mock-server.js",
+    "dev:with-mock": "concurrently \"npm:start:mock\" \"vite\"",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
@@ -25,8 +34,19 @@
     "vue": "^3.5.18"
   },
   "devDependencies": {
+    "@pinia/testing": "^1.0.2",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@testing-library/vue": "^8.1.0",
+    "@types/jest": "^30.0.0",
+    "@types/jsdom": "^21.1.7",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-vue": "^6.0.1",
+    "happy-dom": "^18.0.1",
+    "jsdom": "^27.0.0",
+    "msw": "^2.11.2",
     "vite": "^7.0.6",
-    "vite-plugin-vue-devtools": "^8.0.0"
+    "vite-plugin-vue-devtools": "^8.0.0",
+    "vitest-fetch-mock": "^0.4.5"
   }
 }
