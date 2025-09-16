@@ -1,0 +1,93 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/dashboardDefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "subscriptionId": {"type": "string"},
+    "resourceGroupName": {"type": "string"},
+    "appInsightsName": {"type": "string", "defaultValue": "optima-app-insights"},
+    "environment": {"type": "string", "defaultValue": "prod"}
+  },
+  "variables": {
+    "sharedTimeRange": "24h",
+    "resourceId": "[resourceId(parameters('subscriptionId'), parameters('resourceGroupName'), 'microsoft.insights/components', parameters('appInsightsName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Portal/dashboards",
+      "apiVersion": "2020-09-01-preview",
+      "name": "[concat('OptimaCore-Dashboard-', parameters('environment'))]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "lenses": {
+          "0": {
+            "order": 0,
+            "parts": [
+              {
+                "position": {"x": 0, "y": 0, "rowSpan": 3, "colSpan": 6},
+                "metadata": {
+                  "inputs": [
+                    {"name": "resource", "isOptional": true},
+                    {"name": "id", "value": "[variables('resourceId')]"}
+                  ],
+                  "type": "Extension/AppInsightsExtension/PartType/AppMapGalateeReactPart",
+                  "settings": {"PartTitle": "Application Map"}
+                }
+              },
+              {
+                "position": {"x": 6, "y": 0, "rowSpan": 3, "colSpan": 6},
+                "metadata": {
+                  "inputs": [
+                    {"name": "options", "value": {"chart": {"metrics": [{"resourceMetadata": {"id": "[variables('resourceId')]"},"name": "requests/duration","aggregationType": 4,"namespace": "microsoft.insights/components","metricVisualization": {"displayName": "Request Duration (p95)"}}],"title": "Request Latency (p95)","titleKind": 1,"visualization": {"chartType": 2,"legendVisualization": {"isVisible": true},"yAxisOptions": {"isVisible": true},"yAxisTitle": "ms"}}},"filters": {"MsApmInstrumentedKey": ["[variables('resourceId')]"]}}},
+                    {"name": "sharedTimeRange", "value": "[variables('sharedTimeRange')]"}
+                  ],
+                  "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart",
+                  "settings": {}
+                }
+              },
+              {
+                "position": {"x": 0, "y": 3, "rowSpan": 3, "colSpan": 6},
+                "metadata": {
+                  "inputs": [
+                    {"name": "options", "value": {"chart": {"metrics": [{"resourceMetadata": {"id": "[variables('resourceId')]"},"name": "customMetrics/CacheHitRatio","aggregationType": 4,"namespace": "microsoft.insights/components"}],"title": "Cache Hit Ratio","visualization": {"chartType": 2,"yAxisOptions": {"isVisible": true},"yAxisTitle": "%"}}}},
+                    {"name": "sharedTimeRange", "value": "[variables('sharedTimeRange')]"}
+                  ],
+                  "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart"
+                }
+              },
+              {
+                "position": {"x": 6, "y": 3, "rowSpan": 3, "colSpan": 6},
+                "metadata": {
+                  "inputs": [
+                    {"name": "options", "value": {"chart": {"metrics": [{"resourceMetadata": {"id": "[variables('resourceId')]"},"name": "customMetrics/RUConsumption","aggregationType": 1,"namespace": "microsoft.insights/components"}],"title": "RU Consumption","visualization": {"chartType": 2,"yAxisOptions": {"isVisible": true},"yAxisTitle": "RUs"}}}},
+                    {"name": "sharedTimeRange", "value": "[variables('sharedTimeRange')]"}
+                  ],
+                  "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart"
+                }
+              },
+              {
+                "position": {"x": 0, "y": 6, "rowSpan": 3, "colSpan": 6},
+                "metadata": {
+                  "inputs": [
+                    {"name": "options", "value": {"chart": {"metrics": [{"resourceMetadata": {"id": "[variables('resourceId')]"},"name": "customMetrics/ActiveConnections","aggregationType": 1,"namespace": "microsoft.insights/components"}],"title": "Active Database Connections","visualization": {"chartType": 2,"yAxisOptions": {"isVisible": true},"yAxisTitle": "Connections"}}}},
+                    {"name": "sharedTimeRange", "value": "[variables('sharedTimeRange')]"}
+                  ],
+                  "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart"
+                }
+              },
+              {
+                "position": {"x": 6, "y": 6, "rowSpan": 3, "colSpan": 6},
+                "metadata": {
+                  "inputs": [
+                    {"name": "options", "value": {"chart": {"metrics": [{"resourceMetadata": {"id": "[variables('resourceId')]"},"name": "requests/failed","aggregationType": 7,"namespace": "microsoft.insights/components"}],"title": "Error Rate","visualization": {"chartType": 2,"yAxisOptions": {"isVisible": true},"yAxisTitle": "Errors"}}}},
+                    {"name": "sharedTimeRange", "value": "[variables('sharedTimeRange')]"}
+                  ],
+                  "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Database Performance Metrics",
+  "description": "Schema for database performance test results",
+  "type": "object",
+  "properties": {
+    "testId": {
+      "type": "string",
+      "description": "Unique identifier for the test run"
+    },
+    "startTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the test started"
+    },
+    "endTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the test completed"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Test duration in seconds"
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "clients": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of concurrent client workers"
+        },
+        "iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of iterations per client"
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of concurrent operations per client"
+        },
+        "testDuration": {
+          "type": "number",
+          "description": "Planned test duration in seconds (0 if using iterations)"
+        },
+        "rampUp": {
+          "type": "number",
+          "description": "Ramp-up time in seconds"
+        },
+        "cooldown": {
+          "type": "number",
+          "description": "Cooldown time in seconds"
+        },
+        "outputDir": {
+          "type": "string",
+          "description": "Output directory for test results"
+        }
+      },
+      "required": ["clients", "iterations", "concurrency"]
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "totalQueries": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of queries executed"
+        },
+        "successfulQueries": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of successful queries"
+        },
+        "failedQueries": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of failed queries"
+        },
+        "qps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Queries per second"
+        },
+        "latency": {
+          "type": "object",
+          "properties": {
+            "count": {"type": "integer"},
+            "min": {"type": "number"},
+            "max": {"type": "number"},
+            "avg": {"type": "number"},
+            "p50": {"type": "number"},
+            "p75": {"type": "number"},
+            "p90": {"type": "number"},
+            "p95": {"type": "number"},
+            "p99": {"type": "number"},
+            "p999": {"type": "number"}
+          },
+          "required": ["count", "min", "max", "avg", "p50", "p95", "p99"]
+        },
+        "workerStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "workerId": {"type": "integer"},
+              "startTime": {"type": "string", "format": "date-time"},
+              "endTime": {"type": "string", "format": "date-time"},
+              "duration": {"type": "number"},
+              "totalQueries": {"type": "integer"},
+              "successfulQueries": {"type": "integer"},
+              "failedQueries": {"type": "integer"}
+            },
+            "required": ["workerId", "totalQueries"]
+          }
+        }
+      },
+      "required": ["totalQueries", "successfulQueries", "failedQueries", "latency"]
+    },
+    "system": {
+      "type": "object",
+      "properties": {
+        "platform": {"type": "string"},
+        "arch": {"type": "string"},
+        "cpus": {"type": "integer"},
+        "totalMemory": {"type": "number"},
+        "freeMemory": {"type": "number"},
+        "loadavg": {
+          "type": "array",
+          "items": {"type": "number"}
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "workerId": {"type": ["integer", "null"]},
+          "timestamp": {"type": "string", "format": "date-time"},
+          "error": {"type": "string"}
+        },
+        "required": ["error", "timestamp"]
+      }
+    }
+  },
+  "required": ["testId", "startTime", "metrics", "options"]
+}
