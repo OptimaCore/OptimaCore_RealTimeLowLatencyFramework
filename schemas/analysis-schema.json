@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Analysis Report",
+  "description": "Schema for statistical analysis reports",
+  "type": "object",
+  "required": [
+    "analysis_id",
+    "timestamp",
+    "analysis_type",
+    "metrics",
+    "groups"
+  ],
+  "properties": {
+    "analysis_id": {
+      "type": "string",
+      "description": "Unique identifier for this analysis"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the analysis was performed"
+    },
+    "analysis_type": {
+      "type": "string",
+      "enum": ["descriptive", "t_test", "anova"],
+      "description": "Type of analysis performed"
+    },
+    "input_files": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Source files used for this analysis"
+    },
+    "group_by": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Fields used for grouping results"
+    },
+    "metrics": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Metrics that were analyzed"
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["group_values", "count", "statistics"],
+        "properties": {
+          "group_values": {
+            "type": "object",
+            "additionalProperties": {"type": ["string", "number", "boolean", "null"]}
+          },
+          "count": {"type": "integer"},
+          "statistics": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "mean": {"type": "number"},
+                "std": {"type": "number"},
+                "min": {"type": "number"},
+                "max": {"type": "number"},
+                "p50": {"type": "number"},
+                "p95": {"type": "number"},
+                "p99": {"type": "number"},
+                "ci_lower": {"type": "number"},
+                "ci_upper": {"type": "number"},
+                "ci_level": {"type": "number", "minimum": 0, "maximum": 1}
+              },
+              "required": ["mean", "std", "min", "max", "p50", "p95", "p99"]
+            }
+          }
+        }
+      }
+    },
+    "comparisons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {"type": "object"},
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "metric": {"type": "string"},
+          "test_type": {"type": "string", "enum": ["t_test"]},
+          "p_value": {"type": "number", "minimum": 0, "maximum": 1},
+          "statistic": {"type": "number"},
+          "df": {"type": "number"},
+          "effect_size": {"type": "number"},
+          "ci_lower": {"type": "number"},
+          "ci_upper": {"type": "number"},
+          "ci_level": {"type": "number", "minimum": 0, "maximum": 1},
+          "significance": {"type": "boolean"}
+        },
+        "required": ["groups", "metric", "test_type", "p_value", "significance"]
+      }
+    },
+    "anova_results": {
+      "type": "object",
+      "properties": {
+        "df_between": {"type": "number"},
+        "df_within": {"type": "number"},
+        "f_statistic": {"type": "number"},
+        "p_value": {"type": "number"},
+        "effect_size": {"type": "number"},
+        "significance": {"type": "boolean"},
+        "post_hoc": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "group1": {"type": "object"},
+              "group2": {"type": "object"},
+              "p_value": {"type": "number"},
+              "significance": {"type": "boolean"}
+            },
+            "required": ["group1", "group2", "p_value", "significance"]
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "ci_method": {"type": "string"},
+        "bootstrap_samples": {"type": "integer", "minimum": 1},
+        "alpha": {"type": "number", "minimum": 0, "maximum": 1},
+        "software_version": {"type": "string"}
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "default": "1.0.0"
+    }
+  },
+  "additionalProperties": false
+}
