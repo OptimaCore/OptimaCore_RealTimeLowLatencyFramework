@@ -1,0 +1,53 @@
+{
+  "name": "hierarchical",
+  "description": "Hierarchical architecture with Redis cache and PostgreSQL",
+  "deployment": {
+    "type": "kubernetes",
+    "replicas": 3,
+    "resources": {
+      "requests": {
+        "cpu": "500m",
+        "memory": "512Mi"
+      },
+      "limits": {
+        "cpu": "1000m",
+        "memory": "1Gi"
+      }
+    }
+  },
+  "cache": {
+    "enabled": true,
+    "type": "redis",
+    "ttl": 300,
+    "strategy": "write-through"
+  },
+  "storage": {
+    "primary": "postgresql",
+    "replicas": 2,
+    "backup": {
+      "enabled": true,
+      "type": "s3",
+      "retention_days": 30
+    }
+  },
+  "telemetry": {
+    "enabled": true,
+    "sample_rate": 1.0,
+    "exporters": ["prometheus", "jaeger"],
+    "tags": {
+      "architecture": "hierarchical",
+      "tier": "production"
+    }
+  },
+  "features": {
+    "caching_enabled": true,
+    "read_replicas": true,
+    "auto_scaling": true,
+    "circuit_breaker": true
+  },
+  "tags": {
+    "environment": "production",
+    "managed_by": "terraform",
+    "deployment_variant": "hierarchical"
+  }
+}

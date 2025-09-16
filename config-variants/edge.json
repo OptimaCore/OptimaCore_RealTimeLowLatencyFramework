@@ -1,0 +1,53 @@
+{
+  "name": "edge",
+  "description": "Edge-optimized architecture with CDN and edge functions",
+  "deployment": {
+    "type": "serverless",
+    "provider": "cloudflare-workers",
+    "regions": ["global"],
+    "resources": {
+      "cpu": null,
+      "memory": "256Mi",
+      "timeout": "10s"
+    }
+  },
+  "cache": {
+    "enabled": true,
+    "type": "kv",
+    "ttl": 60,
+    "strategy": "write-behind",
+    "edge_ttl": 3600
+  },
+  "storage": {
+    "primary": "d1",
+    "replicas": 0,
+    "edge_caching": true,
+    "backup": {
+      "enabled": true,
+      "type": "r2",
+      "retention_days": 7
+    }
+  },
+  "telemetry": {
+    "enabled": true,
+    "sample_rate": 0.1,
+    "exporters": ["datadog", "newrelic"],
+    "tags": {
+      "architecture": "edge",
+      "tier": "edge"
+    },
+    "edge_analytics": true
+  },
+  "features": {
+    "caching_enabled": true,
+    "edge_functions": true,
+    "geo_routing": true,
+    "dns_based_failover": true,
+    "edge_caching": true
+  },
+  "tags": {
+    "environment": "production",
+    "managed_by": "terraform",
+    "deployment_variant": "edge"
+  }
+}

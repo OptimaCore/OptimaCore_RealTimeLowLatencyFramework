@@ -1,0 +1,94 @@
+{
+  "name": "serverless",
+  "description": "Serverless architecture with function-as-a-service",
+  "deployment": {
+    "type": "serverless",
+    "provider": "aws-lambda",
+    "regions": ["us-east-1", "us-west-2", "eu-west-1"],
+    "memory_size": 1024,
+    "timeout": 30,
+    "concurrency": 1000
+  },
+  "cache": {
+    "enabled": true,
+    "type": "dynamodb",
+    "ttl": 300,
+    "strategy": "write-through"
+  },
+  "storage": {
+    "primary": "dynamodb",
+    "secondary": "s3",
+    "backup": {
+      "enabled": true,
+      "type": "s3",
+      "versioning": true,
+      "transition_to_glacier_days": 90
+    }
+  },
+  "api_gateway": {
+    "enabled": true,
+    "type": "http-api",
+    "caching_enabled": true,
+    "throttling_rate_limit": 10000,
+    "throttling_burst_limit": 2000
+  },
+  "event_bus": {
+    "enabled": true,
+    "type": "eventbridge",
+    "rules": [
+      {
+        "name": "order-events",
+        "pattern": {
+          "source": ["app.orders"],
+          "detail-type": ["Order Created", "Order Updated", "Order Deleted"]
+        }
+      }
+    ]
+  },
+  "telemetry": {
+    "enabled": true,
+    "sample_rate": 0.1,
+    "exporters": ["xray", "cloudwatch"],
+    "tags": {
+      "architecture": "serverless",
+      "tier": "production"
+    },
+    "xray": {
+      "enabled": true,
+      "sampling_rule": {
+        "fixed_target": 1,
+        "rate": 0.1
+      }
+    },
+    "cloudwatch": {
+      "enabled": true,
+      "log_retention_days": 30,
+      "metrics_enabled": true
+    }
+  },
+  "features": {
+    "auto_scaling": true,
+    "pay_per_use": true,
+    "cold_start_optimization": true,
+    "vpc_connectivity": true,
+    "private_api": false,
+    "custom_domain": true,
+    "custom_authorizer": true,
+    "cors": true,
+    "throttling": true,
+    "usage_plans": true,
+    "api_keys": true,
+    "monitoring": true,
+    "alerting": true,
+    "tracing": true,
+    "logging": true
+  },
+  "tags": {
+    "environment": "production",
+    "managed_by": "terraform",
+    "deployment_variant": "serverless",
+    "cost_center": "engineering",
+    "project": "optima-core",
+    "owner": "platform-team"
+  }
+}
