@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptimaCore Analysis Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .chart-container {
+            position: relative;
+            margin: 20px 0;
+            height: 400px;
+            width: 100%;
+        }
+        .chart-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            display: flex;
+            gap: 5px;
+        }
+        .chart-actions button {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 3px 8px;
+            cursor: pointer;
+        }
+        .chart-actions button:hover {
+            background: #f8f9fa;
+        }
+        .sidebar {
+            background-color: #f8f9fa;
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .main-content {
+            padding: 20px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+        .metric-card {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .metric-card.active {
+            border-left: 4px solid #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <h4>OptimaCore Dashboard</h4>
+                    <hr>
+                    <div class="mb-3">
+                        <label for="dataSource" class="form-label">Data Source</label>
+                        <select class="form-select" id="dataSource">
+                            <option value="local">Local File</option>
+                            <option value="api">API Endpoint</option>
+                        </select>
+                    </div>
+                    <div id="fileInputContainer" class="mb-3">
+                        <label for="dataFile" class="form-label">Select Analysis File</label>
+                        <input type="file" class="form-control" id="dataFile" accept=".json">
+                    </div>
+                    <div id="apiInputContainer" class="mb-3 d-none">
+                        <label for="apiUrl" class="form-label">API URL</label>
+                        <input type="text" class="form-control" id="apiUrl" placeholder="https://api.example.com/data">
+                        <button id="loadApiData" class="btn btn-primary btn-sm mt-2 w-100">Load Data</button>
+                    </div>
+                    <hr>
+                    <h5>Metrics</h5>
+                    <div id="metricsList" class="list-group">
+                        <!-- Dynamically populated -->
+                    </div>
+                    <hr>
+                    <h5>Group By</h5>
+                    <div id="groupByOptions" class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="storage_source" id="groupStorage" checked>
+                            <label class="form-check-label" for="groupStorage">
+                                Storage Source
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="cache_hit" id="groupCache">
+                            <label class="form-check-label" for="groupCache">
+                                Cache Status
+                            </label>
+                        </div>
+                    </div>
+                    <hr>
+                    <button id="exportAll" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-download"></i> Export All Charts
+                    </button>
+                    <button id="exportReport" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-file-pdf"></i> Export PDF Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <div class="col-md-9 col-lg-10 ms-sm-auto px-md-4 main-content">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" id="dashboardTitle">Analysis Dashboard</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleSidebar">
+                                <i class="bi bi-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="row mb-4" id="summaryCards">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <!-- Charts Section -->
+                <div id="chartsContainer">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Latency Comparison</h5>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="latencyChartDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-gear"></i>
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="latencyChartDropdown">
+                                            <li><a class="dropdown-item" href="#" data-chart="latencyChart" data-action="export">Export as PNG</a></li>
+                                            <li><a class="dropdown-item" href="#" data-chart="latencyChart" data-action="zoom-reset">Reset Zoom</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="latencyChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Throughput by Storage</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="throughputChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Error Rate Distribution</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="errorRateChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Detailed Metrics</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover" id="metricsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Metric</th>
+                                                    <th>Mean</th>
+                                                    <th>Median</th>
+                                                    <th>P95</th>
+                                                    <th>Std Dev</th>
+                                                    <th>Min</th>
+                                                    <th>Max</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Dynamically populated -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- Dashboard Script -->
+    <script src="dashboard.js"></script>
+</body>
+</html>

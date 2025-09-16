@@ -16,6 +16,14 @@ A high-performance, scalable infrastructure framework for building low-latency a
 - Infrastructure as Code (IaC) with Terraform
 - Comprehensive documentation
 
+### Analytics Dashboard
+- Interactive visualization of performance metrics
+- Support for multiple data sources (local files, API endpoints)
+- Export charts as PNG, SVG, or PDF
+- Real-time updates and filtering
+- Responsive design for all devices
+- Azure Dashboard integration
+
 ### Database Features
 - **PostgreSQL with Read Replicas**: High-availability database with read scaling
 - **Connection Pooling**: Efficient connection management with pg-pool
@@ -42,6 +50,11 @@ A high-performance, scalable infrastructure framework for building low-latency a
 ├── docs/              # Documentation
 │   └── db-role.md     # Database architecture and patterns
 ├── scripts/           # Utility and build scripts
+│   └── generate-charts.js  # Script to generate static chart images
+├── dashboard/         # Interactive analytics dashboard
+│   ├── index.html     # Dashboard UI
+│   ├── dashboard.js   # Dashboard logic and visualizations
+│   └── azure-dashboard.json  # Azure Portal dashboard template
 ├── frontend/          # Frontend application (if applicable)
 └── experiments/       # Experimental features and benchmarks
 ```

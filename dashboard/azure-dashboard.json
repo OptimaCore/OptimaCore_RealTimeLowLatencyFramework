@@ -1,0 +1,265 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "dashboardName": {
+            "type": "string",
+            "defaultValue": "OptimaCore Analysis Dashboard",
+            "metadata": {
+                "description": "Name for the dashboard"
+            }
+        },
+        "appInsightsName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Application Insights resource"
+            }
+        },
+        "workspaceName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Log Analytics workspace"
+            }
+        }
+    },
+    "variables": {
+        "dashboardName": "[parameters('dashboardName')]",
+        "appInsightsName": "[parameters('appInsightsName')]",
+        "workspaceName": "[parameters('workspaceName')]"
+    },
+    "resources": [
+        {
+            "properties": {
+                "lenses": {
+                    "0": {
+                        "order": 0,
+                        "parts": [
+                            {
+                                "position": {
+                                    "x": 0,
+                                    "y": 0,
+                                    "rowSpan": 3,
+                                    "colSpan": 6
+                                },
+                                "metadata": {
+                                    "inputs": [
+                                        {
+                                            "name": "id",
+                                            "value": "/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/microsoft.insights/components/${variables('appInsightsName')}"
+                                        },
+                                        {
+                                            "name": "version",
+                                            "value": "1.0"
+                                        }
+                                    ],
+                                    "type": "Extension/AppInsightsExtension/PartType/AppMapGalPt"
+                                }
+                            },
+                            {
+                                "position": {
+                                    "x": 6,
+                                    "y": 0,
+                                    "rowSpan": 3,
+                                    "colSpan": 6
+                                },
+                                "metadata": {
+                                    "inputs": [
+                                        {
+                                            "name": "ComponentId",
+                                            "value": {
+                                                "Name": "${variables('appInsightsName')}",
+                                                "SubscriptionId": "${subscription().subscriptionId}",
+                                                "ResourceGroup": "${resourceGroup().name}"
+                                            },
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "Query",
+                                            "value": "requests\n| summarize count=sum(itemCount) by name, success\n| order by count desc\n| render piechart"
+                                        },
+                                        {
+                                            "name": "PartTitle",
+                                            "value": "Request Distribution"
+                                        },
+                                        {
+                                            "name": "PartSubTitle",
+                                            "value": "${variables('appInsightsName')}"
+                                        }
+                                    ],
+                                    "type": "Extension/AppInsightsExtension/PartType/QueryResult/QueryId/QueryResult"
+                                }
+                            },
+                            {
+                                "position": {
+                                    "x": 0,
+                                    "y": 3,
+                                    "rowSpan": 3,
+                                    "colSpan": 6
+                                },
+                                "metadata": {
+                                    "inputs": [
+                                        {
+                                            "name": "ComponentId",
+                                            "value": {
+                                                "Name": "${variables('appInsightsName')}",
+                                                "SubscriptionId": "${subscription().subscriptionId}",
+                                                "ResourceGroup": "${resourceGroup().name}"
+                                            },
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "Query",
+                                            "value": "requests\n| summarize avg(duration) by bin(timestamp, 5m), name\n| render timechart"
+                                        },
+                                        {
+                                            "name": "PartTitle",
+                                            "value": "Request Duration"
+                                        },
+                                        {
+                                            "name": "PartSubTitle",
+                                            "value": "${variables('appInsightsName')}"
+                                        }
+                                    ],
+                                    "type": "Extension/AppInsightsExtension/PartType/QueryResult/QueryId/QueryResult"
+                                }
+                            },
+                            {
+                                "position": {
+                                    "x": 6,
+                                    "y": 3,
+                                    "rowSpan": 3,
+                                    "colSpan": 6
+                                },
+                                "metadata": {
+                                    "inputs": [
+                                        {
+                                            "name": "ComponentId",
+                                            "value": {
+                                                "Name": "${variables('appInsightsName')}",
+                                                "SubscriptionId": "${subscription().subscriptionId}",
+                                                "ResourceGroup": "${resourceGroup().name}"
+                                            },
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "Query",
+                                            "value": "requests\n| summarize count=sum(itemCount) by resultCode\n| order by count desc\n| render barchart"
+                                        },
+                                        {
+                                            "name": "PartTitle",
+                                            "value": "Response Codes"
+                                        },
+                                        {
+                                            "name": "PartSubTitle",
+                                            "value": "${variables('appInsightsName')}"
+                                        }
+                                    ],
+                                    "type": "Extension/AppInsightsExtension/PartType/QueryResult/QueryId/QueryResult"
+                                }
+                            },
+                            {
+                                "position": {
+                                    "x": 0,
+                                    "y": 6,
+                                    "rowSpan": 3,
+                                    "colSpan": 6
+                                },
+                                "metadata": {
+                                    "inputs": [
+                                        {
+                                            "name": "workspace",
+                                            "value": "/subscriptions/${subscription().subscriptionId}/resourcegroups/${resourceGroup().name}/providers/Microsoft.OperationalInsights/workspaces/${variables('workspaceName')}",
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "query",
+                                            "value": "Perf\n| where CounterName == \"% Processor Time\"\n| where ObjectName == \"Process\" and InstanceName contains \"node\"\n| summarize avg(CounterValue) by bin(TimeGenerated, 5m), Computer\n| render timechart"
+                                        },
+                                        {
+                                            "name": "title",
+                                            "value": "Node.js CPU Usage"
+                                        },
+                                        {
+                                            "name": "timeRange",
+                                            "value": "24h"
+                                        }
+                                    ],
+                                    "type": "Extension/LogAnalyticsExtension/PartType/LogsDashboardTile"
+                                }
+                            },
+                            {
+                                "position": {
+                                    "x": 6,
+                                    "y": 6,
+                                    "rowSpan": 3,
+                                    "colSpan": 6
+                                },
+                                "metadata": {
+                                    "inputs": [
+                                        {
+                                            "name": "workspace",
+                                            "value": "/subscriptions/${subscription().subscriptionId}/resourcegroups/${resourceGroup().name}/providers/Microsoft.OperationalInsights/workspaces/${variables('workspaceName')}",
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "query",
+                                            "value": "Perf\n| where CounterName == \"Available MBytes\"\n| summarize avg(CounterValue) by bin(TimeGenerated, 5m), Computer\n| render timechart"
+                                        },
+                                        {
+                                            "name": "title",
+                                            "value": "Available Memory (MB)"
+                                        },
+                                        {
+                                            "name": "timeRange",
+                                            "value": "24h"
+                                        }
+                                    ],
+                                    "type": "Extension/LogAnalyticsExtension/PartType/LogsDashboardTile"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "metadata": {
+                    "model": {
+                        "timeRange": {
+                            "value": {
+                                "relative": {
+                                    "duration": 24,
+                                    "timeUnit": 1
+                                }
+                            },
+                            "type": "MsPortalFxCompositionConfig.Value\u003cTimeRange\u003e"
+                        },
+                        "filterLocale": {
+                            "value": "en-us"
+                        },
+                        "filters": {
+                            "value": {
+                                "MsPortalFx_TimeRange": {
+                                    "model": {
+                                        "format": "utc",
+                                        "granularity": "auto",
+                                        "relative": "24h"
+                                    },
+                                    "displayCache": {
+                                        "name": "UTC Time",
+                                        "timeScale": 1
+                                    },
+                                    "filteredPartIds": [
+                                        "StartboardPart-QueryPart"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "name": "[variables('dashboardName')]",
+            "type": "Microsoft.Portal/dashboards",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-08-01-preview",
+            "dependsOn": []
+        }
+    ]
+}
