@@ -1,0 +1,31 @@
+{
+  "experiment_id": "latency_test",
+  "run_id": "run_67890",
+  "timestamp": "2023-09-16T18:45:00.000Z",
+  "metrics": {
+    "latency_ms": 65.7,
+    "throughput_rps": 980.2,
+    "error_rate": 0.008,
+    "cpu_usage": 82.3,
+    "memory_usage_mb": 1100.8
+  },
+  "parameters": {
+    "concurrent_users": 100,
+    "test_duration_seconds": 300,
+    "target_endpoint": "api/v1/process",
+    "payload_size_kb": 2.5,
+    "use_compression": true,
+    "cache_enabled": false
+  },
+  "metadata": {
+    "hostname": "test-server-02",
+    "cpu_count": 8,
+    "memory_mb": 16384,
+    "os": "linux",
+    "tags": ["performance", "load_test", "api_v1"]
+  },
+  "storage_source": "s3",
+  "cache_hit": false,
+  "duration_ms": 300250,
+  "version": "1.0.0"
+}
