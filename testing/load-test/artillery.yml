@@ -1,0 +1,100 @@
+# Artillery Load Test Configuration
+# For detailed configuration options, see: https://www.artillery.io/docs/guides/guides/test-script-reference
+
+config:
+  target: "http://localhost:3001"  # Update this to your target server
+  phases:
+    - duration: 60
+      arrivalRate: 10  # Number of users to start with
+      rampTo: 50       # Ramp up to 50 users
+      name: "Ramp up load"
+    - duration: 120
+      arrivalRate: 50   # Stay at 50 users for 2 minutes
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 50
+      rampTo: 0        # Ramp down to 0 users
+      name: "Ramp down"
+  environments:
+    local:
+      target: "http://localhost:3001"
+    staging:
+      target: "https://staging.optimacore.example.com"
+    production:
+      target: "https://api.optimacore.example.com"
+  plugins:
+    ensure:
+      "http": "2.x.x"
+    expect: {}
+  processor: "./utils/artillery-helpers.js"
+  payload:
+    path: "./test-data/users.csv"
+    fields:
+      - "username"
+      - "password"
+  variables:
+    - token: ""
+
+# HTTP Scenarios
+scenarios:
+  - name: "Health Check"
+    beforeScenario: "setAuthToken"
+    flow:
+      - get:
+          url: "/health"
+          capture:
+            - json: "$.status"
+              as: "status"
+          expect:
+            - statusCode: 200
+            - contentType: "json"
+            - equals:
+                - "{{ $status }}"
+                - "ok"
+
+  - name: "Login Flow"
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            username: "{{ username }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+              strict: false
+          expect:
+            - statusCode: 200
+            - hasProperty: "token"
+      - set:
+          variables:
+            token: "{{ authToken }}"
+
+  - name: "Authenticated Request"
+    beforeScenario: "setAuthToken"
+    flow:
+      - get:
+          url: "/api/protected"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+
+# WebSocket Scenarios
+  - name: "WebSocket Connection"
+    engine: "ws"
+    flow:
+      - function: "generateWsPayload"
+      - send: "{{ payload }}"
+      - think: 1
+      - send: "close"
+
+# Global Hooks
+hooks:
+  beforeScenario: "beforeScenario"
+  afterScenario: "afterScenario"
+  beforeRequest: "beforeRequest"
+  afterResponse: "afterResponse"
+  beforeTest: "beforeTest"
+  afterTest: "afterTest"
+  beforeExit: "beforeExit"
