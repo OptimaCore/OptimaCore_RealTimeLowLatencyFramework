@@ -8,14 +8,59 @@ set -e
 # Default values
 SUBSCRIPTION_ID=""
 BUDGET_NAME=""
-BUDGET_AMOUNT=0
+BUDGET_AMOUNT=${DEFAULT_BUDGET_AMOUNT:-1000}
 RESOURCE_GROUP=""
 START_DATE=$(date +%Y-%m-01)  # First day of current month
 END_DATE=$(date -d "+1 year" +%Y-%m-01)  # One year from now
-TIME_GRAIN="Monthly"
-CONTACT_EMAILS=()
+TIME_GRAIN=${DEFAULT_BUDGET_TIME_GRAIN:-Monthly}
+
+# Function to safely split strings into arrays
+safe_split() {
+    local input="$1"
+    local delimiter="${2:-,}"
+    local -n arr_ref="$3"
+    
+    if [ -z "$input" ]; then
+        arr_ref=()
+        return
+    fi
+    
+    # Handle both Unix and Windows line endings
+    input=$(echo "$input" | tr -d '\r')
+    
+    # Split the string into an array
+    IFS="$delimiter" read -r -a arr_ref <<< "$input"
+    
+    # Trim whitespace from each element
+    for i in "${!arr_ref[@]}"; do
+        arr_ref[$i]=$(echo "${arr_ref[$i]}" | xargs)
+    done
+}
+
+# Set default contact emails if not provided
+safe_split "${BUDGET_ALERT_EMAILS}" "," CONTACT_EMAILS
+
+# Set default thresholds if not provided
+if [ -z "${DEFAULT_BUDGET_THRESHOLDS}" ]; then
+    THRESHOLDS=(50 80 100)  # Default threshold percentages
+else
+    safe_split "${DEFAULT_BUDGET_THRESHOLDS}" "," THRESHOLDS
+fi
+
+# Validate thresholds are numbers
+for threshold in "${THRESHOLDS[@]}"; do
+    if ! [[ "$threshold" =~ ^[0-9]+$ ]]; then
+        echo "Error: Invalid threshold value '$threshold'. Must be a number."
+        exit 1
+    fi
+    
+    if [ "$threshold" -lt 1 ] || [ "$threshold" -gt 100 ]; then
+        echo "Error: Threshold must be between 1 and 100. Got: $threshold"
+        exit 1
+    fi
+done
+
 ACTION_GROUPS=()
-THRESHOLDS=(50 80 100)  # Default threshold percentages
 FILTERS=""
 DRY_RUN=false
 DEBUG=false
@@ -173,11 +218,35 @@ done
 IFS=$'\n' THRESHOLDS=($(sort -n <<<"${THRESHOLDS[*]}"))
 unset IFS
 
+# Function to run Azure CLI commands with error handling
+run_az_command() {
+    local cmd="az $1"
+    if [ -n "$SUBSCRIPTION_ID" ]; then
+        cmd="$cmd --subscription $SUBSCRIPTION_ID"
+    fi
+    
+    if [ "$DRY_RUN" = true ]; then
+        echo "[DRY RUN] Would execute: $cmd"
+        return 0
+    fi
+    
+    if [ "$DEBUG" = true ]; then
+        echo "[DEBUG] Executing: $cmd"
+    fi
+    
+    eval "$cmd"
+    local status=$?
+    
+    if [ $status -ne 0 ]; then
+        echo "Error executing: $cmd"
+        return $status
+    fi
+    
+    return 0
+}
+
 # Build the base command
-BASE_CMD="az consumption budget"
-if [ -n "$SUBSCRIPTION_ID" ]; then
-    BASE_CMD="$BASE_CMD --subscription $SUBSCRIPTION_ID"
-fi
+BASE_CMD="consumption budget"
 
 # Set the scope
 SCOPE="/subscriptions/$(az account show --query id -o tsv)"

@@ -85,16 +85,29 @@ try {
     } else {
         Write-Output "No webhook data provided. Running in test mode with default parameters."
         $budgetName = "Test Budget"
-        $budgetAmount = 1000
-        $currentSpend = 950
+        $budgetAmount = if ($env:DEFAULT_BUDGET_AMOUNT) { [int]$env:DEFAULT_BUDGET_AMOUNT } else { 1000 }
         $spendPercentage = 95
+        $currentSpend = [int]($budgetAmount * $spendPercentage / 100)  # 95% of budget
         $subscriptionId = (Get-AzContext).Subscription.Id
+    }
+    
+    # Get non-production tags from environment variables with defaults
+    $nonProdEnvTags = if ($env:NON_PROD_ENV_TAGS) {
+        $env:NON_PROD_ENV_TAGS -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    } else {
+        @("dev", "test", "staging", "non-prod", "sandbox")
+    }
+    
+    $nonProdShutdownTags = if ($env:NON_PROD_SHUTDOWN_TAGS) {
+        $env:NON_PROD_SHUTDOWN_TAGS -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    } else {
+        @("true", "yes")
     }
     
     # Define resource tags to identify non-production resources
     $nonProdTags = @{
-        "environment" = @("dev", "test", "staging", "non-prod", "sandbox")
-        "shutdown" = @("true", "yes")
+        "environment" = $nonProdEnvTags
+        "shutdown" = $nonProdShutdownTags
     }
     
     # 1. Scale down non-production VMs
@@ -258,6 +271,23 @@ try {
 } catch {
     $errorMsg = $_.Exception.Message
     Write-Error "Error in runbook: $errorMsg"
+    
+    try {
+        # Try to send error notification if webhook is configured
+        $webhookUrl = Get-AutomationVariable -Name 'CostAlertWebhookUrl' -ErrorAction SilentlyContinue
+        if ($webhookUrl) {
+            $errorBody = @{
+                title = "Budget Mitigation Runbook Failed"
+                text = "Error: $errorMsg"
+                timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                status = "Failed"
+            } | ConvertTo-Json -Depth 5
+            
+            Invoke-RestMethod -Uri $webhookUrl -Method Post -Body $errorBody -ContentType "application/json"
+        }
+    } catch {
+        Write-Warning "Failed to send error notification: $_"
+    }
     
     # Return error details
     $result = @{

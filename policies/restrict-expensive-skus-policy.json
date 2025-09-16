@@ -36,7 +36,7 @@
           "displayName": "Maximum vCPUs per VM",
           "description": "Maximum number of vCPUs allowed for a single VM"
         },
-        "defaultValue": 8
+        "defaultValue": "[parameters('maxCoresPerVM')"
       },
       "maxMemoryGBPerVM": {
         "type": "Integer",
@@ -44,7 +44,7 @@
           "displayName": "Maximum Memory per VM (GB)",
           "description": "Maximum amount of memory in GB allowed for a single VM"
         },
-        "defaultValue": 32
+        "defaultValue": "[parameters('maxMemoryGBPerVM')"
       },
       "allowedVMSeries": {
         "type": "Array",
@@ -52,11 +52,7 @@
           "displayName": "Allowed VM Series",
           "description": "List of allowed VM series (e.g., Standard_B, Standard_D, etc.)"
         },
-        "defaultValue": [
-          "Standard_B",
-          "Standard_D",
-          "Standard_DS"
-        ]
+        "defaultValue": "[split(parameters('allowedVMSeries'), ',')"
       },
       "allowedSQLTiers": {
         "type": "Array",
@@ -64,12 +60,7 @@
           "displayName": "Allowed SQL Database Tiers",
           "description": "List of allowed SQL Database tiers"
         },
-        "defaultValue": [
-          "Basic",
-          "Standard",
-          "GeneralPurpose",
-          "BusinessCritical"
-        ]
+        "defaultValue": "[split(parameters('allowedSQLTiers'), ',')"
       },
       "allowedSQLServiceObjectives": {
         "type": "Array",
@@ -90,11 +81,7 @@
           "displayName": "Allowed Regions",
           "description": "List of allowed regions for resource deployment"
         },
-        "defaultValue": [
-          "eastus",
-          "westus2",
-          "centralus"
-        ]
+        "defaultValue": "[split(parameters('allowedRegions'), ',')"
       }
     },
     "policyRule": {

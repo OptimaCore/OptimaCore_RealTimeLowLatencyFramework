@@ -5,15 +5,46 @@
 
 set -e
 
+# Function to safely get environment variables with defaults
+safe_get_env() {
+    local var_name="$1"
+    local default_value="$2"
+    local value="${!var_name:-$default_value}"
+    
+    # Remove any carriage returns that might be present in Windows environments
+    echo "$value" | tr -d '\r'
+}
+
 # Default values
-WEBHOOK_URL=""
-BUDGET_NAME="Test Budget"
-BUDGET_AMOUNT=1000
-CURRENT_SPEND=850
-THRESHOLD=85
+WEBHOOK_URL=$(safe_get_env "COST_ALERT_WEBHOOK_URL" "")
+BUDGET_NAME=$(safe_get_env "BUDGET_NAME" "Test Budget")
+BUDGET_AMOUNT=$(safe_get_env "DEFAULT_BUDGET_AMOUNT" "1000")
+THRESHOLD=$(safe_get_env "DEFAULT_BUDGET_THRESHOLDS" "85")
+
+# Calculate current spend as 85% of budget if not provided
+if [ -z "${CURRENT_SPEND:-}" ]; then
+    CURRENT_SPEND=$((${BUDGET_AMOUNT} * 85 / 100))
+else
+    CURRENT_SPEND=$(safe_get_env "CURRENT_SPEND" "")
+fi
+
 SUBSCRIPTION_ID=""
 RESOURCE_GROUP=""
 DEBUG=false
+
+# Validate numeric values
+for var in BUDGET_AMOUNT CURRENT_SPEND THRESHOLD; do
+    if ! [[ "${!var}" =~ ^[0-9]+$ ]]; then
+        echo "Error: $var must be a number. Got: ${!var}" >&2
+        exit 1
+    fi
+done
+
+# Validate threshold is between 1-100
+if [ "$THRESHOLD" -lt 1 ] || [ "$THRESHOLD" -gt 100 ]; then
+    echo "Error: THRESHOLD must be between 1 and 100. Got: $THRESHOLD" >&2
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -113,19 +144,17 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate required parameters
+# Validate webhook URL is provided and valid
 if [ -z "$WEBHOOK_URL" ]; then
-    log_error "Webhook URL is required"
-    usage
+    echo -e "${RED}Error: Webhook URL is required${NC}" >&2
+    echo "Please provide a webhook URL using --webhook-url or set COST_ALERT_WEBHOOK_URL environment variable" >&2
+    exit 1
 fi
 
-# Validate amounts are numbers
-for var in BUDGET_AMOUNT CURRENT_SPEND THRESHOLD; do
-    if ! [[ "${!var}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-        log_error "$var must be a number"
-        exit 1
-    fi
-done
+# Validate the webhook URL
+if ! validate_url "$WEBHOOK_URL"; then
+    exit 1
+fi
 
 # Calculate percentage
 PERCENTAGE=$(awk "BEGIN {printf \"%.2f\", ($CURRENT_SPEND / $BUDGET_AMOUNT) * 100}")

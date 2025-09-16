@@ -22,6 +22,30 @@
         ],
         "defaultValue": "Deny"
       },
+      "alertEmails": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Alert Email Addresses",
+          "description": "Comma-separated list of email addresses to receive budget alerts"
+        },
+        "defaultValue": "[parameters('alertEmails')"
+      },
+      "alertRoles": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Alert Contact Roles",
+          "description": "Comma-separated list of Azure roles to receive budget alerts"
+        },
+        "defaultValue": "[parameters('alertRoles')"
+      },
+      "thresholds": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Budget Thresholds",
+          "description": "Comma-separated list of threshold percentages for budget alerts"
+        },
+        "defaultValue": "[parameters('thresholds')"
+      },
       "budgetAmount": {
         "type": "Integer",
         "metadata": {
@@ -96,12 +120,8 @@
                           "enabled": true,
                           "operator": "GreaterThan",
                           "threshold": 90,
-                          "contactEmails": [
-                            "billing@example.com"
-                          ],
-                          "contactRoles": [
-                            "Owner"
-                          ],
+                          "contactEmails": "[split(parameters('alertEmails'), ',')",
+                          "contactRoles": "[split(parameters('alertRoles'), ',')",
                           "contactGroups": [],
                           "thresholdType": "Actual"
                         },
@@ -109,12 +129,8 @@
                           "enabled": true,
                           "operator": "GreaterThan",
                           "threshold": 100,
-                          "contactEmails": [
-                            "billing@example.com"
-                          ],
-                          "contactRoles": [
-                            "Owner"
-                          ],
+                          "contactEmails": "[split(parameters('alertEmails'), ',')",
+                          "contactRoles": "[split(parameters('alertRoles'), ',')",
                           "contactGroups": [],
                           "thresholdType": "Forecasted"
                         }
