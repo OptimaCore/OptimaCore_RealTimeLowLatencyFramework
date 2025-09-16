@@ -3,6 +3,11 @@ import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 import { trace, context, Span, SpanStatusCode } from '@opentelemetry/api';
 import { tracer } from '../telemetry/tracing';
 
+interface ErrorResponse {
+  message: string;
+  [key: string]: any;
+}
+
 interface ApiResponse<T> {
   data: T | null;
   loading: boolean;
@@ -56,7 +61,8 @@ const useApi = <T>(): ApiResponse<T> => {
           span.setStatus({ code: SpanStatusCode.OK });
           return response.data;
         } else {
-          const errorMessage = response.data?.message || `HTTP error ${response.status}`;
+          const errorData = response.data as ErrorResponse;
+          const errorMessage = errorData?.message || `HTTP error ${response.status}`;
           setError(errorMessage);
           span.setStatus({
             code: SpanStatusCode.ERROR,
@@ -66,7 +72,8 @@ const useApi = <T>(): ApiResponse<T> => {
         }
       } catch (err) {
         const axiosError = err as AxiosError;
-        const errorMessage = axiosError.response?.data?.message || axiosError.message;
+        const errorData = axiosError.response?.data as ErrorResponse | undefined;
+        const errorMessage = errorData?.message || axiosError.message;
         
         setError(errorMessage);
         
