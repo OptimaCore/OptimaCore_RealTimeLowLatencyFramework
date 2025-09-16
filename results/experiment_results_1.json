@@ -1,0 +1,31 @@
+{
+  "experiment_id": "latency_test",
+  "run_id": "run_12345",
+  "timestamp": "2023-09-16T18:30:00.000Z",
+  "metrics": {
+    "latency_ms": 45.2,
+    "throughput_rps": 1200,
+    "error_rate": 0.01,
+    "cpu_usage": 78.5,
+    "memory_usage_mb": 1024.5
+  },
+  "parameters": {
+    "concurrent_users": 100,
+    "test_duration_seconds": 300,
+    "target_endpoint": "api/v1/process",
+    "payload_size_kb": 2.5,
+    "use_compression": true,
+    "cache_enabled": true
+  },
+  "metadata": {
+    "hostname": "test-server-01",
+    "cpu_count": 8,
+    "memory_mb": 16384,
+    "os": "linux",
+    "tags": ["performance", "load_test", "api_v1"]
+  },
+  "storage_source": "local",
+  "cache_hit": false,
+  "duration_ms": 300250,
+  "version": "1.0.0"
+}

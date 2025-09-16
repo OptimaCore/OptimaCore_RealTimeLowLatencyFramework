@@ -1,0 +1,14 @@
+{
+  "experiment_id": "latency_test",
+  "run_id": "3583f46c-4c1d-4dda-9948-456f1b400c96",
+  "timestamp": "2025-09-16T18:23:40.555Z",
+  "input_files": [
+    "results\\experiment_results_1.json",
+    "results\\db-metrics.json"
+  ],
+  "valid_results": 1,
+  "error_count": 1,
+  "storage_source": "local",
+  "cache_hit": false,
+  "version": "1.0.0"
+}
