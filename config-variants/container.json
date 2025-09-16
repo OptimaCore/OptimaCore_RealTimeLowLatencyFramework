@@ -1,0 +1,97 @@
+{
+  "name": "container",
+  "description": "Container-based architecture with Kubernetes orchestration",
+  "deployment": {
+    "type": "kubernetes",
+    "orchestrator": "eks",
+    "replicas": 5,
+    "auto_scaling": {
+      "enabled": true,
+      "min_replicas": 3,
+      "max_replicas": 20,
+      "target_cpu_utilization": 70
+    },
+    "resources": {
+      "requests": {
+        "cpu": "1000m",
+        "memory": "1Gi"
+      },
+      "limits": {
+        "cpu": "2000m",
+        "memory": "2Gi"
+      }
+    },
+    "readiness_probe": {
+      "enabled": true,
+      "path": "/health",
+      "initial_delay_seconds": 5,
+      "period_seconds": 10
+    }
+  },
+  "cache": {
+    "enabled": true,
+    "type": "redis-cluster",
+    "shards": 3,
+    "replicas_per_shard": 2,
+    "ttl": 600,
+    "strategy": "write-behind"
+  },
+  "storage": {
+    "primary": "postgresql-ha",
+    "replicas": 3,
+    "read_replicas": 2,
+    "backup": {
+      "enabled": true,
+      "type": "s3",
+      "retention_days": 90,
+      "point_in_time_recovery": true
+    }
+  },
+  "service_mesh": {
+    "enabled": true,
+    "provider": "istio",
+    "mtls": true,
+    "tracing": true,
+    "metrics": true
+  },
+  "telemetry": {
+    "enabled": true,
+    "sample_rate": 0.5,
+    "exporters": ["prometheus", "jaeger"],
+    "tags": {
+      "architecture": "container",
+      "tier": "production"
+    }
+  },
+  "networking": {
+    "ingress": {
+      "enabled": true,
+      "class": "nginx",
+      "tls": {
+        "enabled": true,
+        "issuer": "letsencrypt-prod"
+      },
+      "cors": {
+        "enabled": true,
+        "allowed_origins": ["*"]
+      },
+      "rate_limiting": {
+        "enabled": true,
+        "rate": "100r/s",
+        "burst": 200
+      }
+    }
+  },
+  "features": {
+    "caching_enabled": true,
+    "auto_scaling": true,
+    "service_mesh": true,
+    "distributed_tracing": true,
+    "metrics_collection": true
+  },
+  "tags": {
+    "environment": "production",
+    "managed_by": "terraform",
+    "deployment_variant": "container"
+  }
+}
