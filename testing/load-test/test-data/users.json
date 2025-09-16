@@ -1,0 +1,37 @@
+[
+  {
+    "id": "user1",
+    "username": "testuser1@example.com",
+    "password": "TestPass123!",
+    "roles": ["user"],
+    "permissions": ["read:profile", "update:profile"]
+  },
+  {
+    "id": "user2",
+    "username": "testuser2@example.com",
+    "password": "TestPass123!",
+    "roles": ["user", "premium"],
+    "permissions": ["read:profile", "update:profile", "premium:access"]
+  },
+  {
+    "id": "user3",
+    "username": "admin@example.com",
+    "password": "AdminPass123!",
+    "roles": ["admin"],
+    "permissions": ["read:profile", "update:profile", "admin:access"]
+  },
+  {
+    "id": "user4",
+    "username": "api@example.com",
+    "password": "ApiPass123!",
+    "roles": ["service"],
+    "permissions": ["api:access"]
+  },
+  {
+    "id": "user5",
+    "username": "support@example.com",
+    "password": "SupportPass123!",
+    "roles": ["support"],
+    "permissions": ["read:profile", "support:access"]
+  }
+]
