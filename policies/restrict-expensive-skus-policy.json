@@ -1,0 +1,173 @@
+{
+  "properties": {
+    "displayName": "Restrict Expensive SKUs",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "This policy restricts the deployment of expensive VM and database SKUs to control costs.",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Cost"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "Deny",
+          "Audit",
+          "Disabled"
+        ],
+        "defaultValue": "Deny"
+      },
+      "excludedResourceGroups": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Excluded Resource Groups",
+          "description": "List of resource groups to exclude from this policy"
+        },
+        "defaultValue": []
+      },
+      "maxCoresPerVM": {
+        "type": "Integer",
+        "metadata": {
+          "displayName": "Maximum vCPUs per VM",
+          "description": "Maximum number of vCPUs allowed for a single VM"
+        },
+        "defaultValue": "[parameters('maxCoresPerVM')"
+      },
+      "maxMemoryGBPerVM": {
+        "type": "Integer",
+        "metadata": {
+          "displayName": "Maximum Memory per VM (GB)",
+          "description": "Maximum amount of memory in GB allowed for a single VM"
+        },
+        "defaultValue": "[parameters('maxMemoryGBPerVM')"
+      },
+      "allowedVMSeries": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Allowed VM Series",
+          "description": "List of allowed VM series (e.g., Standard_B, Standard_D, etc.)"
+        },
+        "defaultValue": "[split(parameters('allowedVMSeries'), ',')"
+      },
+      "allowedSQLTiers": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Allowed SQL Database Tiers",
+          "description": "List of allowed SQL Database tiers"
+        },
+        "defaultValue": "[split(parameters('allowedSQLTiers'), ',')"
+      },
+      "allowedSQLServiceObjectives": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Allowed SQL Database Service Objectives",
+          "description": "List of allowed SQL Database service objectives"
+        },
+        "defaultValue": [
+          "Basic",
+          "S0", "S1", "S2", "S3", "S4", "S6", "S7", "S9", "S12",
+          "P1", "P2", "P4", "P6", "P11", "P15",
+          "GP_Gen5_2", "GP_Gen5_4", "GP_Gen5_6", "GP_Gen5_8", "GP_Gen5_10", "GP_Gen5_12", "GP_Gen5_14", "GP_Gen5_16", "GP_Gen5_18", "GP_Gen5_20", "GP_Gen5_24", "GP_Gen5_32", "GP_Gen5_40", "GP_Gen5_80"
+        ]
+      },
+      "allowedRegions": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Allowed Regions",
+          "description": "List of allowed regions for resource deployment"
+        },
+        "defaultValue": "[split(parameters('allowedRegions'), ',')"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "anyOf": [
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Compute/virtualMachines"
+              },
+              {
+                "not": {
+                  "field": "Microsoft.Compute/virtualMachines/imageOffer",
+                  "in": ["WindowsServer", "RHEL", "UbuntuServer", "CentOS"]
+                }
+              },
+              {
+                "not": {
+                  "field": "name",
+                  "like": "*test*"
+                }
+              },
+              {
+                "not": {
+                  "field": "Microsoft.Compute/virtualMachines/hardwareProfile.vmSize",
+                  "like": "Standard_DS1_v2"
+                }
+              },
+              {
+                "not": {
+                  "field": "location",
+                  "in": "[parameters('allowedRegions')]"
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Compute/virtualMachines"
+              },
+              {
+                "value": "[greater(length(field('Microsoft.Compute/virtualMachines/hardwareProfile.vmSize')), 0)]",
+                "equals": true
+              },
+              {
+                "value": "[greater(int(extract(field('Microsoft.Compute/virtualMachines/hardwareProfile.vmSize'), 'Standard_*_', 1, 1)), parameters('maxCoresPerVM'))]",
+                "equals": true
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Sql/servers/databases"
+              },
+              {
+                "not": {
+                  "field": "Microsoft.Sql/servers/databases/sku.tier",
+                  "in": "[parameters('allowedSQLTiers')]"
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Sql/servers/databases"
+              },
+              {
+                "not": {
+                  "field": "Microsoft.Sql/servers/databases/requestedServiceObjectiveName",
+                  "in": "[parameters('allowedSQLServiceObjectives')]"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  }
+}
