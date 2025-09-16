@@ -1,0 +1,155 @@
+{
+  "version": "1.0",
+  "storage": {
+    "accountName": "${AZURE_STORAGE_ACCOUNT_NAME}",
+    "containerName": "${AZURE_STORAGE_CONTAINER_NAME:-assets}",
+    "cdnUrl": "${AZURE_CDN_URL}",
+    "connectionString": "${AZURE_STORAGE_CONNECTION_STRING}"
+  },
+  "upload": {
+    "maxFileSize": 104857600, 
+    "allowedTypes": [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+      "application/pdf",
+      "text/plain"
+    ],
+    "maxFiles": 10,
+    "bufferSize": 4194304, 
+    "maxConcurrency": 5
+  },
+  "cacheRules": {
+    "default": "public, max-age=600",
+    "image": "public, max-age=31536000, immutable",
+    "video": "public, max-age=86400",
+    "document": "public, max-age=3600",
+    "font": "public, max-age=31536000, immutable",
+    "script": "public, max-age=31536000, immutable",
+    "style": "public, max-age=31536000, immutable"
+  },
+  "fileTypeMappings": {
+    "image": ["jpg", "jpeg", "png", "gif", "webp", "svg", "ico"],
+    "video": ["mp4", "webm", "ogv", "mov", "m3u8", "ts"],
+    "document": ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt"],
+    "font": ["woff", "woff2", "ttf", "eot", "otf"],
+    "script": ["js", "mjs"],
+    "style": ["css"]
+  },
+  "cdn": {
+    "enabled": true,
+    "provider": "azure",
+    "purgeOnUpdate": true,
+    "defaultTtl": 3600,
+    "compression": true
+  },
+  "security": {
+    "signedUrls": {
+      "enabled": true,
+      "defaultExpiry": 3600,
+      "maxExpiry": 86400 
+    },
+    "cors": {
+      "allowedOrigins": ["*"],
+      "allowedMethods": ["GET", "HEAD", "OPTIONS"],
+      "allowedHeaders": ["*"],
+      "exposedHeaders": [],
+      "maxAge": 600
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "logLevel": "info",
+    "metrics": {
+      "uploadSize": true,
+      "downloadSize": true,
+      "requestCount": true,
+      "errorRate": true,
+      "latency": true
+    },
+    "alerts": {
+      "errorRateThreshold": 5, 
+      "latencyThreshold": 1000, 
+      "notificationEmails": []
+    }
+  },
+  "optimization": {
+    "image": {
+      "autoResize": true,
+      "maxWidth": 1920,
+      "maxHeight": 1080,
+      "quality": 85,
+      "formats": ["webp", "jpg"],
+      "defaultFormat": "webp"
+    },
+    "video": {
+      "autoTranscode": true,
+      "formats": ["mp4", "webm"],
+      "bitrate": {
+        "1080p": 4000000,
+        "720p": 2500000,
+        "480p": 1000000,
+        "360p": 700000
+      },
+      "thumbnail": {
+        "enabled": true,
+        "width": 320,
+        "height": 180,
+        "format": "jpg"
+      }
+    }
+  },
+  "retention": {
+    "enabled": true,
+    "defaultTtl": 2592000, 
+    "maxTtl": 31536000, 
+    "cleanupCron": "0 2 * * *" 
+  },
+  "accessControl": {
+    "privateBuckets": ["private"],
+    "requireAuth": {
+      "enabled": true,
+      "exclude": [
+        "/public/*",
+        "*.css",
+        "*.js",
+        "*.jpg",
+        "*.jpeg",
+        "*.png",
+        "*.gif",
+        "*.webp",
+        "*.svg"
+      ]
+    }
+  },
+  "versioning": {
+    "enabled": true,
+    "maxVersions": 5
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "destination": {
+      "console": true,
+      "file": {
+        "enabled": true,
+        "path": "./logs/assets.log",
+        "maxSize": "100m",
+        "maxFiles": 14
+      },
+      "azure": {
+        "enabled": false,
+        "connectionString": "${AZURE_APPLICATION_INSIGHTS_CONNECTION_STRING}"
+      }
+    }
+  },
+  "deployment": {
+    "environment": "${NODE_ENV:-development}",
+    "version": "${APP_VERSION:-1.0.0}",
+    "region": "${REGION:-eastus}"
+  }
+}
