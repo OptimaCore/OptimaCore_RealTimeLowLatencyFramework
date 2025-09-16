@@ -40,7 +40,13 @@
     "test:load:artillery": "node scripts/run-load-test.js --tool artillery",
     "test:load:k6": "node scripts/run-load-test.js --tool k6",
     "test:load:smoke": "node scripts/run-load-test.js --scenario smoke --users 1 --duration 30",
-    "test:load:stress": "node scripts/run-load-test.js --scenario stress --users 100 --duration 300"
+    "test:load:stress": "node scripts/run-load-test.js --scenario stress --users 100 --duration 300",
+    "test:benchmark": "node testing/benchmark/latency-test.js --variant hierarchical --out testing/results/benchmark.json",
+    "test:benchmark:server": "node testing/benchmark/test-server.js",
+    "test:benchmark:test": "node testing/benchmark/test-benchmark.js",
+    "test:benchmark:compare": "node testing/benchmark/compare_variants.js -f testing/results/*.json -o testing/results/comparison",
+    "test:chaos": "node testing/chaos/network-impairment.js --latency 100 --loss 1 --duration 300",
+    "test:chaos:reset": "node testing/chaos/network-impairment.js --reset"
   },
   "repository": {
     "type": "git",
@@ -84,7 +90,13 @@
     "prettier": "^3.0.0",
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.0",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "uuid": "^9.0.0",
+    "asciichart": "^1.5.25",
+    "axios": "^1.6.0",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.3",
+    "commander": "^11.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
