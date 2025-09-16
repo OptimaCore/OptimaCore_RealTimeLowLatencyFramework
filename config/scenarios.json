@@ -1,0 +1,293 @@
+{
+  "scenarios": {
+    "smoke-test": {
+      "description": "Basic smoke test to verify system availability",
+      "phases": [
+        {
+          "duration": 60,
+          "arrivalRate": 1,
+          "rampTo": 5,
+          "name": "warm-up"
+        }
+      ],
+      "defaults": {
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Scenario-Id": "smoke-test"
+        }
+      },
+      "scenarios": [
+        {
+          "name": "health-check",
+          "flow": [
+            { "get": { "url": "/health" } }
+          ]
+        }
+      ]
+    },
+    "load-test": {
+      "description": "Standard load test with realistic user patterns",
+      "phases": [
+        {
+          "duration": 300,
+          "arrivalRate": 5,
+          "rampTo": 50,
+          "name": "ramp-up"
+        },
+        {
+          "duration": 600,
+          "arrivalRate": 50,
+          "name": "sustained-load"
+        }
+      ],
+      "defaults": {
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Scenario-Id": "load-test"
+        }
+      },
+      "scenarios": [
+        {
+          "name": "browse-products",
+          "weight": 3,
+          "flow": [
+            { "get": { "url": "/api/products" } },
+            { "think": 1 },
+            { "get": { "url": "/api/products/{{ $randomInt(1, 100) }}" } }
+          ]
+        },
+        {
+          "name": "user-journey",
+          "weight": 1,
+          "flow": [
+            { "post": { "url": "/api/auth/login", "json": { "username": "test", "password": "test123" } } },
+            { "think": 0.5 },
+            { "get": { "url": "/api/profile" } },
+            { "think": 1 },
+            { "get": { "url": "/api/orders" } }
+          ]
+        }
+      ]
+    },
+    "stress-test": {
+      "description": "Stress test to find system limits",
+      "phases": [
+        {
+          "duration": 300,
+          "arrivalRate": 10,
+          "rampTo": 100,
+          "name": "ramp-up"
+        },
+        {
+          "duration": 300,
+          "arrivalRate": 100,
+          "name": "sustained-load"
+        },
+        {
+          "duration": 60,
+          "arrivalRate": 200,
+          "name": "spike"
+        }
+      ],
+      "defaults": {
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Scenario-Id": "stress-test"
+        }
+      },
+      "scenarios": [
+        {
+          "name": "mixed-operations",
+          "flow": [
+            { "get": { "url": "/api/products" } },
+            { "think": 0.5 },
+            { "get": { "url": "/api/products/{{ $randomInt(1, 100) }}" } },
+            { "think": 0.5 },
+            { "post": { "url": "/api/cart/items", "json": { "productId": "{{ $randomInt(1, 100) }}", "quantity": 1 } } }
+          ]
+        }
+      ]
+    },
+    "chaos-test": {
+      "description": "Test system resilience with chaos scenarios",
+      "phases": [
+        {
+          "duration": 300,
+          "arrivalRate": 10,
+          "rampTo": 30,
+          "name": "baseline"
+        },
+        {
+          "duration": 300,
+          "arrivalRate": 30,
+          "name": "chaos",
+          "chaos": {
+            "networkLatency": {
+              "enabled": true,
+              "minDelay": 1000,
+              "maxDelay": 3000,
+              "errorRate": 0.2
+            },
+            "errorInjection": {
+              "enabled": true,
+              "errorRate": 0.1,
+              "statusCodes": [500, 502, 503, 504]
+            }
+          }
+        }
+      ],
+      "defaults": {
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Scenario-Id": "chaos-test"
+        }
+      },
+      "scenarios": [
+        {
+          "name": "resilience-test",
+          "flow": [
+            { "get": { "url": "/api/health" } },
+            { "think": 0.5 },
+            { "get": { "url": "/api/products" } },
+            { "think": 1 },
+            { "get": { "url": "/api/products/{{ $randomInt(1, 100) }}" } }
+          ]
+        }
+      ]
+    },
+    "soak-test": {
+      "description": "Long-running test to identify memory leaks and stability issues",
+      "phases": [
+        {
+          "duration": 86400, // 24 hours
+          "arrivalRate": 1,
+          "rampTo": 10,
+          "name": "long-running"
+        }
+      ],
+      "defaults": {
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Scenario-Id": "soak-test"
+        }
+      },
+      "scenarios": [
+        {
+          "name": "periodic-health-check",
+          "flow": [
+            { "get": { "url": "/api/health" } },
+            { "think": 30 }
+          ]
+        }
+      ]
+    },
+    "spike-test": {
+      "description": "Test system behavior under sudden traffic spikes",
+      "phases": [
+        {
+          "duration": 60,
+          "arrivalRate": 10,
+          "name": "baseline"
+        },
+        {
+          "duration": 30,
+          "arrivalRate": 500,
+          "name": "spike"
+        },
+        {
+          "duration": 300,
+          "arrivalRate": 10,
+          "name": "recovery"
+        }
+      ],
+      "defaults": {
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Scenario-Id": "spike-test"
+        }
+      },
+      "scenarios": [
+        {
+          "name": "product-browsing",
+          "flow": [
+            { "get": { "url": "/api/products" } },
+            { "think": 0.5 },
+            { "get": { "url": "/api/products/{{ $randomInt(1, 100) }}" } }
+          ]
+        }
+      ]
+    },
+    "multi-region": {
+      "description": "Test with traffic from multiple regions",
+      "phases": [
+        {
+          "duration": 300,
+          "arrivalRate": 5,
+          "rampTo": 20,
+          "name": "ramp-up"
+        },
+        {
+          "duration": 600,
+          "arrivalRate": 20,
+          "name": "sustained-load"
+        }
+      ],
+      "regions": [
+        { "name": "us-east-1", "weight": 3 },
+        { "name": "eu-west-1", "weight": 2 },
+        { "name": "ap-southeast-1", "weight": 1 }
+      ],
+      "defaults": {
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Scenario-Id": "multi-region"
+        }
+      },
+      "scenarios": [
+        {
+          "name": "global-user-journey",
+          "flow": [
+            { "get": { "url": "/api/products" } },
+            { "think": 1 },
+            { "get": { "url": "/api/products/{{ $randomInt(1, 100) }}" } },
+            { "think": 0.5 },
+            { "post": { "url": "/api/cart/items", "json": { "productId": "{{ $randomInt(1, 100) }}", "quantity": 1 } } }
+          ]
+        }
+      ]
+    }
+  },
+  "environments": {
+    "local": {
+      "target": "http://localhost:3000",
+      "headers": {
+        "X-Environment": "local"
+      }
+    },
+    "staging": {
+      "target": "https://staging.api.optimacore.com",
+      "headers": {
+        "X-Environment": "staging",
+        "Authorization": "Bearer ${STAGING_API_KEY}"
+      }
+    },
+    "production": {
+      "target": "https://api.optimacore.com",
+      "headers": {
+        "X-Environment": "production",
+        "Authorization": "Bearer ${PROD_API_KEY}"
+      }
+    }
+  },
+  "defaults": {
+    "timeout": 10000,
+    "noConnectionReuse": false,
+    "userAgent": "Artillery Load Test",
+    "http": {
+      "timeout": 10,
+      "maxSockets": 100,
+      "maxFreeSockets": 10,
+      "freeSocketTimeout": 30000
+    }
+  }
+}

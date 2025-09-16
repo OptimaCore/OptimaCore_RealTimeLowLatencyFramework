@@ -16,6 +16,13 @@ A high-performance, scalable infrastructure framework for building low-latency a
 - Infrastructure as Code (IaC) with Terraform
 - Comprehensive documentation
 
+### CI/CD Pipeline
+- Automated testing and deployment
+- Infrastructure provisioning with Terraform
+- Performance benchmarking
+- Budget monitoring and alerts
+- Resource cleanup
+
 ### Analytics Dashboard
 - Interactive visualization of performance metrics
 - Support for multiple data sources (local files, API endpoints)
@@ -36,27 +43,30 @@ A high-performance, scalable infrastructure framework for building low-latency a
 ## 🏗️ Project Structure
 
 ```
-├── infrastructure/    # Infrastructure as Code (Terraform)
-│   └── modules/       # Reusable infrastructure modules
-│       └── redis/     # Redis cache configuration
-├── services/          # Core services and business logic
-│   └── database/      # Database access layer
-│       ├── pool.js    # Database connection pooling
-│       ├── query.js   # Query builder and executor
+├── .github/workflows/ # GitHub Actions workflows
+│   └── ci-cd.yml     # CI/CD pipeline definition
+├── infrastructure/   # Infrastructure as Code (Terraform)
+│   ├── modules/      # Reusable infrastructure modules
+│   ├── main.tf       # Main Terraform configuration
+│   ├── variables.tf  # Variable definitions
+│   └── outputs.tf    # Output variables
+├── scripts/          # Build and deployment scripts
+│   ├── ci-setup.js   # CI environment setup
+│   └── teardown.js   # Resource cleanup
+├── services/         # Core services and business logic
+│   └── database/     # Database access layer
+│       ├── pool.js   # Database connection pooling
+│       ├── query.js  # Query builder and executor
 │       └── migrations/# Database schema migrations
-├── monitoring/        # Monitoring and observability
-├── testing/           # Test suites and test utilities
+├── docs/             # Documentation
+│   ├── ci-cd.md     # CI/CD pipeline documentation
+│   └── db-role.md   # Database architecture and patterns
+├── monitoring/       # Monitoring and observability
+├── testing/          # Test suites and test utilities
 │   └── database.test.js # Database layer tests
-├── docs/              # Documentation
-│   └── db-role.md     # Database architecture and patterns
-├── scripts/           # Utility and build scripts
-│   └── generate-charts.js  # Script to generate static chart images
-├── dashboard/         # Interactive analytics dashboard
-│   ├── index.html     # Dashboard UI
-│   ├── dashboard.js   # Dashboard logic and visualizations
-│   └── azure-dashboard.json  # Azure Portal dashboard template
-├── frontend/          # Frontend application (if applicable)
-└── experiments/       # Experimental features and benchmarks
+└── dashboard/        # Analytics dashboard
+    ├── index.html    # Dashboard UI
+    └── dashboard.js  # Dashboard logic and visualizations
 ```
 
 ## 🚀 Getting Started

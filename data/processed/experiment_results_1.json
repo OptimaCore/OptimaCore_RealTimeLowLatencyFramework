@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "experimentId": "exp-2023-01",
+    "variant": "control",
+    "storageSource": "redis",
+    "timestamp": "2023-01-15T10:00:00Z"
+  },
+  "metrics": {
+    "response_time_ms": {
+      "value": 125.4,
+      "unit": "milliseconds"
+    },
+    "throughput_rps": {
+      "value": 2450,
+      "unit": "requests/second"
+    },
+    "error_rate": {
+      "value": 0.012,
+      "unit": "percentage"
+    }
+  },
+  "samples": [
+    124.5, 126.1, 125.8, 125.2, 124.9, 125.7, 126.3, 125.0, 125.5, 125.1
+  ]
+}

@@ -1,8 +1,21 @@
+# CI/CD Variables
+variable "github_sha" {
+  description = "The GitHub commit SHA that triggered the deployment"
+  type        = string
+  default     = "local"
+}
+
+variable "github_run_id" {
+  description = "The GitHub Actions run ID"
+  type        = string
+  default     = "local"
+}
+
 # Global Variables
 variable "environment" {
   description = "The deployment environment (e.g., dev, staging, prod)"
   type        = string
-  default     = "dev"
+  default     = "test"
 }
 
 variable "location" {

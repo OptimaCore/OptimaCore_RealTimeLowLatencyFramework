@@ -1,0 +1,338 @@
+{
+  "metadata": {
+    "experimentId": "perf-optimization-2023",
+    "startTime": "2023-11-15T09:00:00Z",
+    "endTime": "2023-11-15T12:30:00Z",
+    "variants": ["control", "optimized"],
+    "storageSources": ["redis", "postgres"],
+    "metrics": ["response_time_ms", "throughput_rps", "error_rate"],
+    "samplingMethod": "stratified random sampling",
+    "alpha": 0.05,
+    "notes": "This is a sample dataset for testing report generation."
+  },
+  "analyses": [
+    {
+      "metric": "response_time_ms",
+      "tests": {
+        "redis": {
+          "anova": {
+            "test": "one-way-anova",
+            "alpha": 0.05,
+            "fValue": 12.45,
+            "df": {
+              "between": 1,
+              "within": 98,
+              "total": 99
+            },
+            "pValue": 0.0007,
+            "isSignificant": true,
+            "effectSize": {
+              "etaSquared": 0.112,
+              "omegaSquared": 0.103,
+              "interpretation": "medium"
+            },
+            "ss": {
+              "between": 2450.32,
+              "within": 19280.45,
+              "total": 21730.77
+            },
+            "ms": {
+              "between": 2450.32,
+              "within": 196.74
+            },
+            "groupStats": [
+              {
+                "group": "control",
+                "n": 50,
+                "mean": 145.2,
+                "std": 14.3,
+                "variance": 204.49
+              },
+              {
+                "group": "optimized",
+                "n": 50,
+                "mean": 125.8,
+                "std": 13.7,
+                "variance": 187.69
+              }
+            ]
+          },
+          "pairwise": {
+            "control_vs_optimized": {
+              "variant1": "control",
+              "variant2": "optimized",
+              "test": "t-test",
+              "equalVariance": true,
+              "alpha": 0.05,
+              "tValue": 3.53,
+              "df": 98,
+              "pValue": 0.0007,
+              "isSignificant": true,
+              "effectSize": {
+                "cohensD": 0.71,
+                "interpretation": "medium"
+              },
+              "groupStats": {
+                "group1": {
+                  "n": 50,
+                  "mean": 145.2,
+                  "std": 14.3,
+                  "variance": 204.49
+                },
+                "group2": {
+                  "n": 50,
+                  "mean": 125.8,
+                  "std": 13.7,
+                  "variance": 187.69
+                }
+              },
+              "ci": [8.1, 30.7],
+              "meanDiff": 19.4
+            }
+          }
+        },
+        "postgres": {
+          "anova": {
+            "test": "one-way-anova",
+            "alpha": 0.05,
+            "fValue": 8.72,
+            "df": {
+              "between": 1,
+              "within": 98,
+              "total": 99
+            },
+            "pValue": 0.0041,
+            "isSignificant": true,
+            "effectSize": {
+              "etaSquared": 0.082,
+              "omegaSquared": 0.072,
+              "interpretation": "small to medium"
+            },
+            "ss": {
+              "between": 1890.45,
+              "within": 21240.33,
+              "total": 23130.78
+            },
+            "ms": {
+              "between": 1890.45,
+              "within": 216.74
+            },
+            "groupStats": [
+              {
+                "group": "control",
+                "n": 50,
+                "mean": 158.7,
+                "std": 15.2,
+                "variance": 231.04
+              },
+              {
+                "group": "optimized",
+                "n": 50,
+                "mean": 145.3,
+                "std": 14.8,
+                "variance": 219.04
+              }
+            ]
+          },
+          "pairwise": {
+            "control_vs_optimized": {
+              "variant1": "control",
+              "variant2": "optimized",
+              "test": "t-test",
+              "equalVariance": true,
+              "alpha": 0.05,
+              "tValue": 2.95,
+              "df": 98,
+              "pValue": 0.0041,
+              "isSignificant": true,
+              "effectSize": {
+                "cohensD": 0.59,
+                "interpretation": "medium"
+              },
+              "groupStats": {
+                "group1": {
+                  "n": 50,
+                  "mean": 158.7,
+                  "std": 15.2,
+                  "variance": 231.04
+                },
+                "group2": {
+                  "n": 50,
+                  "mean": 145.3,
+                  "std": 14.8,
+                  "variance": 219.04
+                }
+              },
+              "ci": [4.3, 22.5],
+              "meanDiff": 13.4
+            }
+          }
+        }
+      }
+    },
+    {
+      "metric": "throughput_rps",
+      "tests": {
+        "redis": {
+          "anova": {
+            "test": "one-way-anova",
+            "alpha": 0.05,
+            "fValue": 15.28,
+            "df": {
+              "between": 1,
+              "within": 98,
+              "total": 99
+            },
+            "pValue": 0.0002,
+            "isSignificant": true,
+            "effectSize": {
+              "etaSquared": 0.135,
+              "omegaSquared": 0.126,
+              "interpretation": "medium to large"
+            },
+            "ss": {
+              "between": 14520.5,
+              "within": 93180.2,
+              "total": 107700.7
+            },
+            "ms": {
+              "between": 14520.5,
+              "within": 950.82
+            },
+            "groupStats": [
+              {
+                "group": "control",
+                "n": 50,
+                "mean": 2450,
+                "std": 31.2,
+                "variance": 973.44
+              },
+              {
+                "group": "optimized",
+                "n": 50,
+                "mean": 2580,
+                "std": 30.5,
+                "variance": 930.25
+              }
+            ]
+          },
+          "pairwise": {
+            "control_vs_optimized": {
+              "variant1": "control",
+              "variant2": "optimized",
+              "test": "t-test",
+              "equalVariance": true,
+              "alpha": 0.05,
+              "tValue": -3.91,
+              "df": 98,
+              "pValue": 0.0002,
+              "isSignificant": true,
+              "effectSize": {
+                "cohensD": 0.78,
+                "interpretation": "medium to large"
+              },
+              "groupStats": {
+                "group1": {
+                  "n": 50,
+                  "mean": 2450,
+                  "std": 31.2,
+                  "variance": 973.44
+                },
+                "group2": {
+                  "n": 50,
+                  "mean": 2580,
+                  "std": 30.5,
+                  "variance": 930.25
+                }
+              },
+              "ci": [-195.2, -64.8],
+              "meanDiff": -130.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "metric": "error_rate",
+      "tests": {
+        "redis": {
+          "anova": {
+            "test": "one-way-anova",
+            "alpha": 0.05,
+            "fValue": 1.23,
+            "df": {
+              "between": 1,
+              "within": 98,
+              "total": 99
+            },
+            "pValue": 0.27,
+            "isSignificant": false,
+            "effectSize": {
+              "etaSquared": 0.012,
+              "omegaSquared": 0.002,
+              "interpretation": "negligible"
+            },
+            "ss": {
+              "between": 0.00045,
+              "within": 0.0362,
+              "total": 0.03665
+            },
+            "ms": {
+              "between": 0.00045,
+              "within": 0.00037
+            },
+            "groupStats": [
+              {
+                "group": "control",
+                "n": 50,
+                "mean": 0.012,
+                "std": 0.0019,
+                "variance": 0.00000361
+              },
+              {
+                "group": "optimized",
+                "n": 50,
+                "mean": 0.008,
+                "std": 0.0017,
+                "variance": 0.00000289
+              }
+            ]
+          },
+          "pairwise": {
+            "control_vs_optimized": {
+              "variant1": "control",
+              "variant2": "optimized",
+              "test": "t-test",
+              "equalVariance": true,
+              "alpha": 0.05,
+              "tValue": 1.11,
+              "df": 98,
+              "pValue": 0.27,
+              "isSignificant": false,
+              "effectSize": {
+                "cohensD": 0.22,
+                "interpretation": "small"
+              },
+              "groupStats": {
+                "group1": {
+                  "n": 50,
+                  "mean": 0.012,
+                  "std": 0.0019,
+                  "variance": 0.00000361
+                },
+                "group2": {
+                  "n": 50,
+                  "mean": 0.008,
+                  "std": 0.0017,
+                  "variance": 0.00000289
+                }
+              },
+              "ci": [-0.003, 0.011],
+              "meanDiff": 0.004
+            }
+          }
+        }
+      }
+    }
+  ]
+}

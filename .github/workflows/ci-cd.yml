@@ -1,0 +1,194 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 0 * * 0'  # Run at midnight UTC every Sunday
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+        - test
+        - staging
+
+env:
+  NODE_VERSION: '20.x'
+  TERRAFORM_VERSION: '1.5.7'
+  AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+  RESOURCE_GROUP: 'optima-core-${{ github.run_id }}'
+  LOCATION: 'eastus'
+  BUDGET_AMOUNT: 50  # USD
+  BUDGET_ALERT_EMAILS: 'devops@example.com'
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./infrastructure
+
+jobs:
+  lint:
+    name: Lint and Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: npm ci
+      - name: Generate documentation
+        run: npm run docs
+      - name: Validate documentation
+        run: npm run docs:validate
+      - name: Upload documentation artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation
+          path: |
+            docs/**/*.md
+            !docs/node_modules/**/*.md
+
+  unit-test:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test -- --coverage
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+
+  deploy-testbed:
+    name: Deploy Test Environment
+    needs: unit-test
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'test' }}
+    env:
+      TF_VAR_environment: ${{ github.event.inputs.environment || 'test' }}
+      TF_VAR_github_sha: ${{ github.sha }}
+      TF_VAR_github_run_id: ${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - run: npm ci
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - run: az group create --name $RESOURCE_GROUP --location $LOCATION
+      - run: terraform init
+      - run: terraform validate
+      - run: terraform plan -out=tfplan
+      - run: terraform apply -auto-approve tfplan
+      - name: Setup budget alert
+        run: |
+          az consumption budget create \
+            --amount $BUDGET_AMOUNT \
+            --name "optima-core-budget" \
+            --category cost \
+            --time-grain monthly \
+            --start-date $(date +%Y-%m-01) \
+            --end-date 2099-12-31 \
+            --notifications '{
+              "Actual_GreaterThan_50_Percent": {
+                "enabled": true,
+                "operator": "GreaterThan",
+                "threshold": 50,
+                "contact_emails": ["'$BUDGET_ALERT_EMAILS'"]
+              }
+            }'
+
+  run-benchmark:
+    name: Run Performance Benchmark
+    needs: deploy-testbed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - name: Run benchmarks
+        run: |
+          API_URL=${{ needs.deploy-testbed.outputs.api_url }} \
+          npm run benchmark
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: results/benchmark-*.json
+          retention-days: 7
+
+  upload-results:
+    name: Upload Results
+    needs: run-benchmark
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: benchmark-results
+          path: results
+      - name: Process and upload results
+        run: |
+          node scripts/process-results.js
+      - name: Generate report
+        run: |
+          npm run generate-report
+      - uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-report
+          path: results/report-*.html
+          retention-days: 30
+
+  teardown:
+    name: Teardown Resources
+    if: always()
+    needs: [deploy-testbed, upload-results]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Teardown resources
+        run: |
+          node scripts/teardown.js teardown
+      - name: Clean up old resources
+        run: |
+          node scripts/teardown.js cleanup
