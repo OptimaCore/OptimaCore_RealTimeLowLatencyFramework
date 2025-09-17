@@ -48,18 +48,54 @@ async function cleanupOldResources() {
       `az group list --query "[?contains(name, 'optima-core-')].{name:name,created:tags.Created}" --output json`
     ).toString();
     
+    if (!result) {
+      console.log('No resource groups found');
+      return;
+    }
+    
     const resourceGroups = JSON.parse(result);
     const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const maxAgeDays = 7; // Keep resources for 7 days
     
-    for (const group of resourceGroups) {
-      const createdDate = new Date(group.created);
-      if (createdDate < oneDayAgo) {
-        console.log(`Deleting old resource group: ${group.name}`);
+    for (const rg of resourceGroups) {
+      if (!rg.created) continue;
+      
+      const created = new Date(rg.created);
+      const ageInDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+      
+      if (ageInDays > maxAgeDays) {
+        console.log(`Deleting old resource group: ${rg.name} (${ageInDays} days old)`);
         try {
-          execSync(`az group delete --name ${group.name} --yes --no-wait`, { stdio: 'inherit' });
+          // Delete any locks on the resource group first
+          try {
+            const locks = JSON.parse(execSync(
+              `az lock list --resource-group ${rg.name} --query "[].{name:name, type:type}" --output json`
+            ).toString());
+            
+            for (const lock of locks) {
+              console.log(`Deleting lock: ${lock.name}`);
+              try {
+                execSync(
+                  `az lock delete --name ${lock.name} --resource-group ${rg.name} --resource-type ${lock.type}`, 
+                  { stdio: 'inherit' }
+                );
+              } catch (lockError) {
+                console.warn(`Could not delete lock ${lock.name}:`, lockError.message);
+              }
+            }
+          } catch (lockError) {
+            console.warn(`Could not list or delete locks for ${rg.name}:`, lockError.message);
+          }
+          
+          // Delete the resource group
+          console.log(`Deleting resource group: ${rg.name}`);
+          execSync(
+            `az group delete --name ${rg.name} --yes --no-wait`,
+            { stdio: 'inherit' }
+          );
+          console.log(`Scheduled deletion of resource group: ${rg.name}`);
         } catch (error) {
-          console.error(`Error deleting ${group.name}:`, error.message);
+          console.error(`Error deleting ${rg.name}:`, error.message);
         }
       }
     }

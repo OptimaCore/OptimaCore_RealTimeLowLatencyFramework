@@ -1,0 +1,58 @@
+# Development environment configuration
+
+app:
+  name: "OptimaCore Development"
+  env: "development"
+  version: "1.0.0"
+  port: 3000
+  host: "0.0.0.0"
+  logLevel: "debug"
+
+# Database configuration for development
+database:
+  client: "pg"
+  connection:
+    host: "localhost"
+    port: 5432
+    user: "postgres"
+    password: "postgres"
+    database: "optimacore"
+    ssl: false
+  pool:
+    min: 2
+    max: 10
+
+# Redis configuration for development
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  tls: false
+
+# Session configuration
+session:
+  secret: "your-session-secret"
+  cookieName: "optimacore.sid"
+  cookieSecure: false
+  cookieHttpOnly: true
+  cookieSameSite: "lax"
+  maxAge: 86400000  # 24 hours in milliseconds
+
+# Security settings
+security:
+  enableHsts: false
+  csp: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+
+# Feature flags
+features:
+  enableMetrics: true
+  enableRequestLogging: true
+  enableCache: true
+  enableAzureKeyVault: false
+  enableAnalytics: false
+
+# Rate limiting
+rateLimit:
+  windowMs: 900000  # 15 minutes
+  maxRequests: 100  # Max requests per window per IP

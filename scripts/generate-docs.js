@@ -39,14 +39,31 @@ async function formatMarkdown(content) {
  * Generate API documentation from JSDoc comments
  */
 async function generateApiDocs() {
-  console.log('Generating API documentation...');
+  console.log('🔍 Generating API documentation...');
   
-  const files = await findJsFiles(path.join(__dirname, '..', 'src'));
+  // Find all JavaScript and TypeScript files
+  const jsFiles = await findJsFiles(path.join(__dirname, '..', 'src'));
+  const tsFiles = await findFiles(path.join(__dirname, '..', 'src'), '.ts');
+  const files = [...jsFiles, ...tsFiles];
   
-  const template = await readFile(
-    path.join(TEMPLATES_DIR, 'api.hbs'),
-    'utf8'
-  ).catch(() => null);
+  if (files.length === 0) {
+    console.warn('⚠️ No JavaScript/TypeScript files found in src directory');
+    return;
+  }
+  
+  console.log(`📄 Found ${files.length} source files to process`);
+  
+  // Load custom template if it exists, otherwise use default
+  let template;
+  try {
+    template = await readFile(
+      path.join(TEMPLATES_DIR, 'api.hbs'),
+      'utf8'
+    );
+    console.log('📝 Using custom template');
+  } catch (error) {
+    console.log('ℹ️ Using default template (no custom template found)');
+  }
 
   const options = {
     files,
@@ -69,27 +86,34 @@ async function generateApiDocs() {
 }
 
 /**
- * Recursively find all JavaScript/TypeScript files in a directory
+ * Recursively find all files with a specific extension in a directory
  */
-async function findJsFiles(dir) {
-  const files = [];
-  const items = await readdir(dir);
+async function findFiles(dir, ext, fileList = []) {
+  const files = await readdir(dir, { withFileTypes: true });
   
-  for (const item of items) {
-    const fullPath = path.join(dir, item);
-    const stats = await stat(fullPath);
+  for (const file of files) {
+    const filePath = path.join(dir, file.name);
     
-    if (stats.isDirectory()) {
-      files.push(...(await findJsFiles(fullPath)));
-    } else if (/\.(js|ts|jsx|tsx)$/.test(fullPath)) {
-      // Exclude test and node_modules files
-      if (!/\/(node_modules|test|__tests__|__mocks__)\/|(\.(test|spec)\.(js|ts|jsx|tsx))$/.test(fullPath)) {
-        files.push(fullPath);
-      }
+    if (file.isDirectory()) {
+      await findFiles(filePath, ext, fileList);
+    } else if (file.name.endsWith(ext)) {
+      fileList.push(filePath);
     }
   }
   
-  return files;
+  return fileList;
+}
+
+/**
+ * Recursively find all JavaScript/TypeScript files in a directory
+ */
+async function findJsFiles(dir) {
+  const jsFiles = await findFiles(dir, '.js');
+  const jsxFiles = await findFiles(dir, '.jsx');
+  const tsFiles = await findFiles(dir, '.ts');
+  const tsxFiles = await findFiles(dir, '.tsx');
+  
+  return [...jsFiles, ...jsxFiles, ...tsFiles, ...tsxFiles];
 }
 
 /**

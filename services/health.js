@@ -3,22 +3,126 @@ const { appInsights } = require('../monitoring/app-insights');
 const { v4: uuidv4 } = require('uuid');
 const os = require('os');
 
+/**
+ * Default configuration values
+ */
+const DEFAULT_CONFIG = {
+  port: parseInt(process.env.PORT, 10) || 3000,
+  host: process.env.HOST || '0.0.0.0',
+  nodeEnv: process.env.NODE_ENV || 'development',
+  baseUrl: process.env.BASE_URL || null,
+  enableMetrics: process.env.ENABLE_METRICS !== 'false',
+  enableRequestLogging: process.env.ENABLE_REQUEST_LOGGING !== 'false',
+  trustProxy: process.env.TRUST_PROXY === 'true',
+  maxMemoryThreshold: process.env.MAX_MEMORY_THRESHOLD || 0.9, // 90% of available memory
+  healthCheckPath: process.env.HEALTH_CHECK_PATH || '/health',
+  readinessPath: process.env.READINESS_PATH || '/ready',
+  metricsPath: process.env.METRICS_PATH || '/metrics'
+};
+
 class HealthService {
   constructor(options = {}) {
-    this.port = options.port || process.env.PORT || 3000;
+    // Merge defaults with provided options
+    this.config = { ...DEFAULT_CONFIG, ...options };
+    
+    // Initialize express app
     this.app = express();
     this.server = null;
     this.components = new Map();
     this.startTime = new Date();
     this.requestCount = 0;
     
-    // Default components
+    // Initialize default components
+  this._initializeComponents();
+  
+  // Setup middleware and routes
+  this.setupMiddleware();
+  this.setupRoutes();
+  }
+  
+  /**
+   * Initialize default health check components
+   * @private
+   */
+  _initializeComponents() {
+    // Register default components
     this.registerComponent('app', () => this.checkAppHealth());
     this.registerComponent('memory', () => this.checkMemoryHealth());
     
-    // Setup middleware and routes
-    this.setupMiddleware();
-    this.setupRoutes();
+    // Add Azure-specific health checks if running in Azure
+    if (process.env.WEBSITE_SITE_NAME) {
+      this.registerComponent('azure', () => this.checkAzureHealth());
+    }
+  }
+  
+  /**
+   * Validate configuration values
+   * @private
+   */
+  _validateConfig() {
+    // Validate port
+    if (typeof this.config.port !== 'number' || this.config.port < 1 || this.config.port > 65535) {
+      throw new Error(`Invalid port number: ${this.config.port}`);
+    }
+    
+    // Validate memory threshold
+    const memThreshold = parseFloat(this.config.maxMemoryThreshold);
+    if (isNaN(memThreshold) || memThreshold <= 0 || memThreshold > 1) {
+      throw new Error(`Invalid memory threshold: ${this.config.maxMemoryThreshold}. Must be between 0 and 1`);
+    }
+    this.config.maxMemoryThreshold = memThreshold;
+    
+    // Ensure paths start with a slash
+    const pathKeys = ['healthCheckPath', 'readinessPath', 'metricsPath'];
+    pathKeys.forEach(key => {
+      if (!this.config[key].startsWith('/')) {
+        this.config[key] = `/${this.config[key]}`;
+      }
+    });
+    
+    // Log configuration in development
+    if (this.config.nodeEnv === 'development') {
+      console.log('Health Service Configuration:');
+      console.log('- Port:', this.config.port);
+      console.log('- Host:', this.config.host);
+      console.log('- Environment:', this.config.nodeEnv);
+      console.log('- Base URL:', this.config.baseUrl || '(auto-detected)');
+      console.log('- Paths:', {
+        health: this.config.healthCheckPath,
+        readiness: this.config.readinessPath,
+        metrics: this.config.metricsPath
+      });
+    }
+  }
+  
+  /**
+   * Get the base URL for the service
+   * @returns {string} The base URL
+   */
+  getBaseUrl() {
+    if (this.config.baseUrl) {
+      return this.config.baseUrl;
+    }
+    
+    const protocol = this.config.nodeEnv === 'production' ? 'https' : 'http';
+    const host = this.config.host === '0.0.0.0' ? 'localhost' : this.config.host;
+    const port = [80, 443].includes(this.config.port) ? '' : `:${this.config.port}`;
+    
+    return `${protocol}://${host}${port}`;
+  }
+  
+  // Default components
+  this.registerComponent('app', () => this.checkAppHealth());
+  this.registerComponent('memory', () => this.checkMemoryHealth());
+  
+  // Add Azure-specific health checks if running in Azure
+  if (process.env.WEBSITE_SITE_NAME) {
+    this.registerComponent('azure', () => this.checkAzureHealth());
+  }
+  
+  // Setup middleware and routes
+  this.setupMiddleware();
+  this.setupRoutes();
   }
   
   setupMiddleware() {

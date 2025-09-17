@@ -20,8 +20,10 @@ class DatabasePool {
     this.connect = promisify(this.primaryPool.connect).bind(this.primaryPool);
     this.end = promisify(this.primaryPool.end).bind(this.primaryPool);
     
-    // Setup metrics collection
-    this.setupMetrics();
+    /**
+   * Setup database connection metrics collection
+   */
+  this.setupMetrics();
   }
   
   createPool(poolConfig) {
@@ -61,13 +63,22 @@ class DatabasePool {
   }
   
   setupMetrics() {
-    // Track pool metrics
+    // Connection metrics
     setInterval(() => {
       metrics.gauge('db.pool.total', this.primaryPool.totalCount);
       metrics.gauge('db.pool.idle', this.primaryPool.idleCount);
       metrics.gauge('db.pool.waiting', this.primaryPool.waitingCount);
       
-      // Track replica lag if replicas are configured
+      // Track replica pool metrics if configured
+      this.replicaPools.forEach((pool, index) => {
+        metrics.gauge(`db.replica.${index}.pool.total`, pool.totalCount);
+        metrics.gauge(`db.replica.${index}.pool.idle`, pool.idleCount);
+        metrics.gauge(`db.replica.${index}.pool.waiting`, pool.waitingCount);
+      });
+    }, 5000); // Update metrics every 5 seconds
+    
+    // Track replica lag if replicas are configured
+    setInterval(() => {
       this.replicaPools.forEach((pool, index) => {
         pool.query('SELECT EXTRACT(EPOCH FROM (NOW() - pg_last_xact_replay_timestamp())) as lag_seconds')
           .then(res => {

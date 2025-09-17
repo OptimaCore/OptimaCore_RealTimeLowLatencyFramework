@@ -47,17 +47,93 @@ else
     safe_split "${DEFAULT_BUDGET_THRESHOLDS}" "," THRESHOLDS
 fi
 
-# Validate thresholds are numbers
-for threshold in "${THRESHOLDS[@]}"; do
-    if ! [[ "$threshold" =~ ^[0-9]+$ ]]; then
-        echo "Error: Invalid threshold value '$threshold'. Must be a number."
+# Validate thresholds are numbers and within range
+validate_thresholds() {
+    for threshold in "${THRESHOLDS[@]}"; do
+        if ! [[ "$threshold" =~ ^[0-9]+$ ]]; then
+            log_error "Threshold must be a number: $threshold"
+            exit 1
+        fi
+        
+        if (( threshold <= 0 || threshold > 100 )); then
+            log_error "Threshold must be between 1 and 100: $threshold"
+            exit 1
+        fi
+    done
+    
+    # Sort thresholds
+    IFS=$'\n' SORTED_THRESHOLDS=($(sort -n <<<"${THRESHOLDS[*]}"))
+    unset IFS
+    THRESHOLDS=("${SORTED_THRESHOLDS[@]}")
+}
+
+# Validate email addresses
+validate_emails() {
+    email_regex="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    
+    for email in "${CONTACT_EMAILS[@]}"; do
+        if [[ ! "$email" =~ $email_regex ]]; then
+            log_warn "Invalid email format: $email"
+            # Remove invalid email
+            CONTACT_EMAILS=("${CONTACT_EMAILS[@]/$email/}")
+        fi
+    done
+    
+    # Remove empty elements
+    CONTACT_EMAILS=("${CONTACT_EMAILS[@]}")
+    
+    if [ ${#CONTACT_EMAILS[@]} -eq 0 ]; then
+        log_error "No valid email addresses provided"
+        exit 1
+    fi
+}
+
+# Validate subscription
+validate_subscription() {
+    if [ -z "$SUBSCRIPTION_ID" ]; then
+        log_error "Subscription ID is required"
         exit 1
     fi
     
-    if [ "$threshold" -lt 1 ] || [ "$threshold" -gt 100 ]; then
-        echo "Error: Threshold must be between 1 and 100. Got: $threshold"
+    if ! az account show --subscription "$SUBSCRIPTION_ID" &>/dev/null; then
+        log_error "Invalid subscription ID or not logged in to Azure CLI"
         exit 1
     fi
+}
+
+# Validate budget amount
+validate_budget() {
+    if ! [[ "$BUDGET_AMOUNT" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        log_error "Budget amount must be a number"
+        exit 1
+    fi
+    
+    if (( $(echo "$BUDGET_AMOUNT <= 0" | bc -l) )); then
+        log_error "Budget amount must be greater than 0"
+        exit 1
+    fi
+}
+
+# Validate time grain
+validate_time_grain() {
+    local valid_grains=("Monthly" "Quarterly" "Annually" "BillingMonth" "BillingQuarter" "BillingAnnual")
+    
+    if ! printf '%s\n' "${valid_grains[@]}" | grep -q "^$TIME_GRAIN$"; then
+        log_error "Invalid time grain. Must be one of: ${valid_grains[*]}"
+        exit 1
+    fi
+}
+
+# Validate all inputs
+validate_inputs() {
+    log_info "Validating inputs..."
+    validate_subscription
+    validate_budget
+    validate_time_grain
+    validate_thresholds
+    validate_emails
+    log_info "Input validation passed"
+}
 done
 
 ACTION_GROUPS=()

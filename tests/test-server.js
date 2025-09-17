@@ -1,9 +1,23 @@
+require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const authRoutes = require('../src/api/auth');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { logger } = require('../services/telemetry');
+
+// Load environment variables with defaults
+const {
+  PORT = 3000,
+  HOST = '0.0.0.0',
+  NODE_ENV = 'development',
+  ALLOWED_ORIGINS = 'http://localhost:3000,http://localhost:3001',
+  ALLOWED_METHODS = 'GET,POST,PUT,DELETE,OPTIONS',
+  ALLOWED_HEADERS = 'Content-Type,Authorization',
+  TEST_USER_EMAIL = 'test@example.com',
+  TEST_USER_PASSWORD = 'password123',
+  TEST_USER_ROLES = 'user,admin'
+} = process.env;
 
 // Create Express app
 const app = express();
@@ -13,7 +27,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+  origin: ALLOWED_ORIGINS.split(',').map(origin => origin.trim()),
+  methods: ALLOWED_METHODS.split(',').map(method => method.trim()),
+  allowedHeaders: ALLOWED_HEADERS.split(',').map(header => header.trim()),
   credentials: true
 }));
 
@@ -60,18 +76,21 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
-  console.log(`Test server running on http://localhost:${PORT}`);
+const server = app.listen(PORT, HOST, () => {
+  console.log(`Test server running in ${NODE_ENV} mode on http://${HOST}:${PORT}`);
   console.log('\nTest endpoints:');
   console.log(`POST   /api/auth/login`);
   console.log(`POST   /api/auth/refresh`);
   console.log(`POST   /api/auth/logout`);
   console.log(`GET    /api/protected (requires auth)`);
   console.log(`GET    /api/admin (requires admin role)`);
-  console.log('\nUse the following test credentials:');
-  console.log('Email: test@example.com');
-  console.log('Password: password123');
+  
+  if (NODE_ENV !== 'production') {
+    console.log('\nTest credentials:');
+    console.log(`Email: ${TEST_USER_EMAIL}`);
+    console.log(`Password: ${TEST_USER_PASSWORD}`);
+    console.log(`Roles: ${TEST_USER_ROLES}`);
+  }
 });
 
 // Handle graceful shutdown

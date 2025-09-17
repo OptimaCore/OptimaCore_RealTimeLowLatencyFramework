@@ -1,12 +1,23 @@
 const jwt = require('../services/auth/jwt');
 const { logger } = require('../services/telemetry');
 
+// Load environment variables with defaults
+const {
+  NODE_ENV = 'development',
+  AUTH_REQUIRED = 'true',
+  AUTH_DEBUG = 'false'
+} = process.env;
+
+// Convert string booleans to actual booleans
+const isAuthRequired = AUTH_REQUIRED === 'true';
+const isDebugMode = AUTH_DEBUG === 'true' || NODE_ENV !== 'production';
+
 /**
  * Authentication middleware that verifies JWT tokens
  */
 const authenticate = (options = {}) => {
   const {
-    required = true,
+    required = isAuthRequired,
     roles = [],
     permissions = []
   } = options;
@@ -93,14 +104,22 @@ const authenticate = (options = {}) => {
         token: token
       };
 
-      // Log successful authentication
-      logger.info('User authenticated', {
+      // Log successful authentication (debug level in production)
+      const logData = {
         userId: req.user.id,
         email: req.user.email,
         roles: req.user.roles,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
         path: req.path,
         method: req.method
-      });
+      };
+      
+      if (isDebugMode) {
+        logger.debug('User authenticated', logData);
+      } else {
+        logger.info('User authenticated', { userId: req.user.id });
+      }
 
       next();
     } catch (error) {
